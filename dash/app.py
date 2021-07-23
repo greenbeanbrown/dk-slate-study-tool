@@ -10,6 +10,9 @@ import dash_table
 
 import pandas as pd
 
+import sys
+sys.path.insert(0, '..')
+from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data    
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -40,14 +43,14 @@ app.layout = html.Div([
         multiple=True
     ),
     html.Div(id='output-data-upload'),
-    html.Div(
-        dcc.Input(
-            id="input_text",
-            type="text",
-            placeholder="input text",
-        )
-    ),
-    html.Div(id="out-all-types")
+    #html.Div(
+    #    dcc.Input(
+    #        id="input_text",
+    #        type="text",
+    #        placeholder="input text",
+    #    )
+    #),
+    #html.Div(id="out-all-types")
 ])
 
 
@@ -74,8 +77,10 @@ def parse_contents(contents, filename, date):
         #html.H6(datetime.datetime.fromtimestamp(date)),
 
         dash_table.DataTable(
-            data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in df.columns]
+            data = prep_raw_dk_contest_data(df, 'MLB')[1].to_dict('records'),
+            #data=df.to_dict('records'),
+            #columns=[{'name': i, 'id': i} for i in df.columns]
+            columns=[{'name': i, 'id': i} for i in prep_raw_dk_contest_data(df, 'MLB')[1].columns]
         ),
 
         html.Hr(),  # horizontal line
@@ -99,15 +104,18 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
             parse_contents(c, n, d) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
+    else:
+        pass
 
-@app.callback(
-    Output("out-all-types", "children"),
-    #[Input("input_{}".format(_), "value") for _ in ALLOWED_TYPES],
-     Input('input_text', "value"),
-    )
-def cb_render(*vals):
-    return(str(val) for val in vals if val)
+#@app.callback(
+#    Output("out-all-types", "children"),
+#    #[Input("input_{}".format(_), "value") for _ in ALLOWED_TYPES],
+#     Input('input_text', "value"),
+#    )
+#def cb_render(*vals):
+#    return(str(val) for val in vals if val)
 
+          
     #return " | ".join((str(val) for val in vals if val))
 
 

@@ -3,6 +3,31 @@ import numpy as np
 
 import time 
 
+
+def prep_raw_dk_contest_data(raw_dk_contest_data, sport):
+
+    # Take in 1 raw dataframe as an input
+    working_df = raw_dk_contest_data.copy()
+
+    # Return a list of 2 dataframes: 1) points ownership df 2) exposures by entry name
+    # 1st create points ownership df
+    points_ownership_df = create_points_own_df(raw_dk_contest_data)
+
+    # Now, create the ownership exposures
+    if sport == 'MLB':
+        exposures_df = cleanup_mlb_lineup_data(raw_dk_contest_data)
+    elif sport == 'MMA':
+        exposures_df = cleanup_mma_lineup_data(raw_dk_contest_data)
+    else:
+        raise ValueError('incorrect sport type entered as input')
+
+    # Return a list of dataframes, use index to get them [0,1]
+    list_of_clean_dfs = [points_ownership_df, exposures_df]
+
+
+
+    return(list_of_clean_dfs)
+
 # Clean EntryName to remove entry numbers if necessary
 def clean_entry_name(entry_name):
     # Find (), index, and remove
@@ -13,6 +38,21 @@ def clean_entry_name(entry_name):
     else:
         clean_name = entry_name[:index].strip()
     return(clean_name)
+
+def create_points_own_df(raw_dk_contest_data):
+
+    # Create the 1st dataset
+    points_own_df = pd.DataFrame()
+
+    # Add the main datapoints
+    points_own_df['player'] = raw_dk_contest_data.Player.dropna()
+    points_own_df['position'] = raw_dk_contest_data['Roster Position'].dropna() 
+    # Need to clean this up a bit, the percentages are coming in as strings from the file so we convert to a float
+    # Strip the percentage sign from the last char and then cast
+    points_own_df['ownership'] = [float(ownership[:-1]) for ownership in  raw_dk_contest_data['%Drafted'].dropna()]
+    points_own_df['points'] = raw_dk_contest_data['FPTS'].dropna()
+
+    return(points_own_df)
 
 #def clean_player_name(player_name):
 #    # Removing 
@@ -31,6 +71,7 @@ def cleanup_mma_lineup_data(raw_lineup_data):
 
     # Create an empty df that will hold the final output
     clean_lineup_data = raw_lineup_data.copy()
+
 
     # Clean the username field - it comes out with extra chars 
     clean_lineup_data['EntryName'] = clean_lineup_data['EntryName'].apply(lambda row: clean_entry_name(row))
@@ -55,11 +96,15 @@ def cleanup_mlb_lineup_data(raw_lineup_data):
     # Create an empty df that will hold the final output
     clean_lineup_data = raw_lineup_data.copy()
 
+    # First thing to do is drop the nans from the Lineup field - these are empty lineups that people submitted and should not be included in this analysis
+    clean_lineup_data = clean_lineup_data[['Rank','EntryId','EntryName','Points','Lineup']]
+    clean_lineup_data = clean_lineup_data.dropna()
+
     # Clean the username field - it comes out with extra chars 
     clean_lineup_data['EntryName'] = clean_lineup_data['EntryName'].apply(lambda row: clean_entry_name(row))
 
     # Replace all position substrings with ##, which we can use to split the lineups easily with - then we will add the positions back after
-    list_of_all_lineups = [lineup.replace('P ', '#').replace('C ', '#').replace('1B ','#').replace('2B','#').replace('3B','#').replace('SS', '#').replace('OF','#') for lineup in raw_lineup_data.Lineup]
+    list_of_all_lineups = [lineup.replace('P ', '#').replace('C ', '#').replace('1B ','#').replace('2B','#').replace('3B','#').replace('SS', '#').replace('OF','#') for lineup in clean_lineup_data.Lineup]
 
 
     # Split up all the Fighter names and get rid of extra space - this is MUCH better than the original idea
@@ -80,6 +125,22 @@ def cleanup_mlb_lineup_data(raw_lineup_data):
 
     # Drop that dirty Lineup column now that its unnecessary
     clean_lineup_data.drop('Lineup', axis=1, inplace=True)
+
+    ############################# START MLB ##################################
+
+    # Begin melting and crosstabbing the exposures data 
+    # Eventually need the input to be dynamic in the web app, but hardcoding a list for now
+    dk_users = ['Awesemo', 'giantsquid', 'bkreider', 'dacoltz', 'getloose', 'totoroll33', 'BigT44', 'I_Slewfoot_U', 'B_Heals152', 'thepickler']
+
+# Loop through each user and create a dictionary with their data
+    user_data_dict = {}
+
+    for user in dk_users:
+        user_data_dict[user] = melt_crosstab(agg_lineups, user)
+        user_data_dict[user] = user_data_dict[user][['player','count','exposure']]
+    
+
+    ############################# END MLB ##################################
 
     return(clean_lineup_data)
 
