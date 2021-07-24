@@ -97,7 +97,10 @@ def parse_contents(contents, filename, date):
             data = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0]).to_dict('records'),
             #data=df.to_dict('records'),
             #columns=[{'name': i, 'id': i} for i in df.columns]
-            columns=[{'name': i, 'id': i} for i in filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0]).columns]
+            columns=[{'name': i, 'id': i} for i in filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0]).columns],
+
+            sort_action="native"
+            #sort_mode="multi"
         ),
 
         html.Hr(),  # horizontal line

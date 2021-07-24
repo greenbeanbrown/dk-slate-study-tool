@@ -199,4 +199,6 @@ def filter_dk_users(agg_lineups_df, points_ownership_df):
     non_user_cols = ['player','position','points', 'ownership']
     master_df = master_df[[*non_user_cols, *master_df.columns.difference(non_user_cols)]]
 
+    master_df = master_df.sort_values('points', ascending=False)
+
     return(master_df)
