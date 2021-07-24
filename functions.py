@@ -126,22 +126,6 @@ def cleanup_mlb_lineup_data(raw_lineup_data):
     # Drop that dirty Lineup column now that its unnecessary
     clean_lineup_data.drop('Lineup', axis=1, inplace=True)
 
-    ############################# START MLB ##################################
-
-    # Begin melting and crosstabbing the exposures data 
-    # Eventually need the input to be dynamic in the web app, but hardcoding a list for now
-    dk_users = ['Awesemo', 'giantsquid', 'bkreider', 'dacoltz', 'getloose', 'totoroll33', 'BigT44', 'I_Slewfoot_U', 'B_Heals152', 'thepickler']
-
-# Loop through each user and create a dictionary with their data
-    user_data_dict = {}
-
-    for user in dk_users:
-        user_data_dict[user] = melt_crosstab(agg_lineups, user)
-        user_data_dict[user] = user_data_dict[user][['player','count','exposure']]
-    
-
-    ############################# END MLB ##################################
-
     return(clean_lineup_data)
 
 def melt_crosstab(agg_lineups_df, user):
@@ -149,6 +133,9 @@ def melt_crosstab(agg_lineups_df, user):
     
     # Get all lineups in a single dataframe for a specific user
     focus_lineups = agg_lineups_df[agg_lineups_df['EntryName'] == user]
+
+    #import ipdb; ipdb.set_trace()
+
     # Melt dataframe
     melted_lineup = focus_lineups.melt(var_name='columns', value_name='player')
     melted_lineup = melted_lineup[melted_lineup['columns'] != 'EntryName']
@@ -172,3 +159,44 @@ def melt_crosstab(agg_lineups_df, user):
     crosstab_lineup = crosstab_lineup.sort_values('count', ascending=False)    
     
     return(crosstab_lineup)
+
+# This function will take in a list of provided DK usernames and a df with aggregate lineup data (which is the output of cleanup_mlb_lineup_data()
+# The return is a filtered dataframe containing only the data of those users exposures and related info
+def filter_dk_users(agg_lineups_df, points_ownership_df):
+#def filter_dk_users(agg_lineups_df, dk_users_list):
+
+    # Make this a dynamic input !!!
+    dk_users = ['Awesemo', 'giantsquid', 'bkreider', 'dacoltz', 'getloose', 'totoroll33', 'BigT44', 'thepickler']
+
+    # Loop through each user and create a dictionary with their data
+    user_data_dict = {}
+
+    for user in dk_users:
+        user_data_dict[user] = melt_crosstab(agg_lineups_df, user)
+        # Use this for MMA
+        #user_data_dict[user]['F'] = user_data_dict[user][['F1','F2','F3','F4','F5','F6']].sum(axis=1)
+        try:
+            user_data_dict[user] = user_data_dict[user][['player','count','exposure']]
+        except:
+            print('Error with ', user)
+            # Remove that user from the list to prevent more errors
+            dk_users.remove(user)
+
+    # Aggregate the various dataframes into a single one
+    agg_exposures = pd.DataFrame()
+
+    for user in dk_users:
+        if user == dk_users[0]:
+            agg_exposures = user_data_dict[user][['player','exposure']].round(2)
+            agg_exposures.rename(columns={'exposure':user}, inplace=True)
+        else:
+            agg_exposures = pd.merge(agg_exposures, user_data_dict[user][['player','exposure']].round(2), how='outer', on='player')
+            agg_exposures.rename(columns={'exposure':user}, inplace=True)
+
+        agg_exposures = agg_exposures.replace(np.nan, 0.0)    
+    # Now merge the 2 datasets that we've created together into 1
+    master_df = pd.merge(agg_exposures, points_ownership_df, on='player')
+    non_user_cols = ['player','position','points', 'ownership']
+    master_df = master_df[[*non_user_cols, *master_df.columns.difference(non_user_cols)]]
+
+    return(master_df)

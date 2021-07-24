@@ -12,7 +12,19 @@ import pandas as pd
 
 import sys
 sys.path.insert(0, '..')
-from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data    
+from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users
+
+def generate_table(dataframe, max_rows=10):
+    return html.Table([
+        html.Thead(
+            html.Tr([html.Th(col) for col in dataframe.columns])
+        ),
+        html.Tbody([
+            html.Tr([
+                html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
+            ]) for i in range(min(len(dataframe), max_rows))
+        ])
+    ])
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -43,6 +55,11 @@ app.layout = html.Div([
         multiple=True
     ),
     html.Div(id='output-data-upload'),
+    # Adding function to process data
+    html.Div(children=[
+        html.H4(children='DK Slate Study Lineups')
+        #generate_table(df)
+])
     #html.Div(
     #    dcc.Input(
     #        id="input_text",
@@ -77,10 +94,10 @@ def parse_contents(contents, filename, date):
         #html.H6(datetime.datetime.fromtimestamp(date)),
 
         dash_table.DataTable(
-            data = prep_raw_dk_contest_data(df, 'MLB')[1].to_dict('records'),
+            data = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0]).to_dict('records'),
             #data=df.to_dict('records'),
             #columns=[{'name': i, 'id': i} for i in df.columns]
-            columns=[{'name': i, 'id': i} for i in prep_raw_dk_contest_data(df, 'MLB')[1].columns]
+            columns=[{'name': i, 'id': i} for i in filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0]).columns]
         ),
 
         html.Hr(),  # horizontal line
