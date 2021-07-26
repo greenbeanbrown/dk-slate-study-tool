@@ -1,0 +1,31 @@
+team,nickname,logo_path,color,
+Arizona Diamondbacks,ARI,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/arizona_diamondbacks.jpeg,red,#D32D41
+Atlanta Braves,ATL,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/atlanta_braves.jpeg,blue,#1C4E80
+Baltimore Orioles,BAL,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/baltimore_orioles.jpeg,orange,#EA6A47
+Boston Red Sox,BOS,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/boston_red_sox.jpeg,red,#D32D41
+Chicago Cubs,CHC,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/chicago_cubs.jpeg,blue,#1C4E80
+Chicago White Sox,CHW,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/chicago_white_sox.jpeg,black,#000000
+Cincinnati Reds,CIN,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/cincinnati_reds.jpeg,red,#D32D41
+Cleveland Indians,CLE,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/cleveland_indians.jpeg,blue,#1C4E80
+Colorado Rockies,COL,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/colorado_rockies.jpeg,purple,#703770
+Detroit Tigers,DET,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/detroit_tigers.jpeg,blue,#1C4E80
+Houston Astros,HOU,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/houston_astros.jpeg,orange,#EA6A47
+Kansas City Royals,KCR,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/kansas_city_royals.jpeg,blue,#0091D5
+Los Angeles Angels,LAA,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/los_angeles_angels.jpeg,red,#D32D41
+Los Angeles Dodgers,LAD,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/los_angeles_dodgers.jpeg,blue,#0091D5
+Miami Marlins,MIA,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/miami_marlins.jpeg,orange,#EA6A47
+Milwaukee Brewers,MIL,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/milwaukee_brewers.jpeg,blue,#1C4E80
+Minnesota Twins,MIN,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/minnesota_twins.jpeg,blue,#1C4E80
+New York Mets,NYM,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/new_york_mets.jpeg,orange,#EA6A47
+New York Yankees,NYY,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/new_york_yankees.jpeg,blue,#1C4E80
+Oakland Athletics,OAK,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/oakland_athletics.jpeg,green,#6AB187
+Philadelphia Phillies,PHI,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/philadelphia_phillies.jpeg,red,#D32D41
+Pittsburgh Pirates,PIT,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/pittsburgh_pirates.jpeg,yellow,#DBAE58
+San Diego Padres,SDP,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/san_diego_padres.jpeg,yellow,#DBAE58
+San Francisco Giants,SFG,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/san_francisco_giants.jpeg,orange,#EA6A47
+Seattle Mariners,SEA,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/seattle_mariners.jpeg,black,#000000
+St. Louis Cardinals,STL,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/st_louis_cardinals.jpeg,red,#D32D41
+Tampa Bay Rays,TBR,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/tampa_bay_rays.jpeg,blue,#488A99
+Texas Rangers,TEX,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/texas_rangers.jpeg,red,#D32D41
+Toronto Blue Jays,TOR,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/toronto_blue_jays.jpeg,blue,#4CB5F5
+Washington Nationals,WAS,C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/washington_nationals.jpeg,red,#D32D41

@@ -3,6 +3,12 @@ import numpy as np
 
 import time 
 
+import Levenshtein
+from Levenshtein import distance as levenshtein_distance 
+
+import dash_html_components as html
+
+import dash_bootstrap_components as dbc
 
 def prep_raw_dk_contest_data(raw_dk_contest_data, sport):
 
@@ -21,10 +27,19 @@ def prep_raw_dk_contest_data(raw_dk_contest_data, sport):
     else:
         raise ValueError('incorrect sport type entered as input')
 
+    # Merge player team and position data for reference (should always be in same dir)
+    player_team_pos_df = pd.read_csv('C:/Users/Sean/Documents/python/dk_slate_study_tool/data/mlb_players_pos_teams_data.csv') 
+    # Fuzzy match the player names to the lookup df with every player
+    player_team_pos_df['player'] = [match_name(player_name, points_ownership_df['player'])[0] for player_name in player_team_pos_df['Player']]
+    player_team_pos_df = handle_outlier_names(player_team_pos_df)
+    player_team_pos_df.drop('Player', axis=1, inplace=True)
+
+    points_ownership_df = pd.merge(points_ownership_df, player_team_pos_df, how='left', on='player')
+    # Add file paths to team logos for use in dash app
+    points_ownership_df = merge_team_logos(points_ownership_df)
+
     # Return a list of dataframes, use index to get them [0,1]
     list_of_clean_dfs = [points_ownership_df, exposures_df]
-
-
 
     return(list_of_clean_dfs)
 
@@ -53,18 +68,6 @@ def create_points_own_df(raw_dk_contest_data):
     points_own_df['points'] = raw_dk_contest_data['FPTS'].dropna()
 
     return(points_own_df)
-
-#def clean_player_name(player_name):
-#    # Removing 
-#    clean_name = player_name.replace('Jr.', '')
-#    clean_name = player_name.replace('Sr.', '')
-#    clean_name = player_name.replace(' I ', ' ')
-#    clean_name = player_name.replace(' II ', ' ')
-#    clean_name = player_name.replace(' III ', ' ')
-#
-#    clean_name = clean_name.strip()
-#
-#    return(clean_name)
 
 # This function takes in a dataframe of the raw DK MMA contest results and cleans it up a bit for our purposes
 def cleanup_mma_lineup_data(raw_lineup_data):
@@ -105,7 +108,6 @@ def cleanup_mlb_lineup_data(raw_lineup_data):
 
     # Replace all position substrings with ##, which we can use to split the lineups easily with - then we will add the positions back after
     list_of_all_lineups = [lineup.replace('P ', '#').replace('C ', '#').replace('1B ','#').replace('2B','#').replace('3B','#').replace('SS', '#').replace('OF','#') for lineup in clean_lineup_data.Lineup]
-
 
     # Split up all the Fighter names and get rid of extra space - this is MUCH better than the original idea
     #list_of_all_lineups = [[player_name.strip() for player_name in lineup[1:].split('#')] for lineup in raw_lineup_data.Lineup]
@@ -202,3 +204,356 @@ def filter_dk_users(agg_lineups_df, points_ownership_df):
     master_df = master_df.sort_values('points', ascending=False)
 
     return(master_df)
+
+# SCRAPING FUNCTION
+# This function parses rotogrinders website for Player Names, Teams, and Positions for MLB data
+# Input is a url that has a GET result for the rotogrinders url
+# example url = 'https://rotogrinders.com/game-stats/mlb-pitcher?site=draftkings&range=season'
+def parse_mlb_stat_data(url):
+    # Initialize driver object
+    driver = webdriver.Firefox()   # Establish the driver, we are using FireFox in this case
+    driver.get(url) 
+
+    # Find the ALL button, to show all results 
+    page_buttons = driver.find_elements_by_class_name("page")
+    all_button = page_buttons[len(page_buttons)-1]
+    # Click the button
+    driver.execute_script("arguments[0].click();", all_button)
+    # Find the table we want
+    table = driver.find_element_by_id('game-stats-table') 
+    # Get the stats table
+    table = driver.find_element_by_id('game-stats-table') 
+    
+    df = pd.DataFrame()
+    
+    # Loop through each column
+    for col in table.find_elements_by_class_name('rgt-col'):
+        # Get the column header for each column and append
+        for header in col.find_elements_by_class_name('rgt-hdr'):
+            # Grabbing all players names into a list 
+            div_tags = col.find_elements_by_tag_name('div')
+            column_data = [tag.text for tag in div_tags]
+            
+            df[column_data[0]] = column_data[1:]
+        
+    return(df)
+
+
+# Create a function that takes two lists of strings for matching
+def match_name(name, list_names, min_score=0.80):
+
+    # -1 score incase we don't get any matches
+    max_score = -1
+    # Returning empty name for no match as well
+    max_name = ""
+    # Iterating over all names in the second list
+    for name2 in list_names:
+        #Finding fuzzy match score
+        score = Levenshtein.ratio(name, name2)
+           
+        # Checking if we are above our threshold and have a better score
+        if (score > min_score) & (score > max_score):
+            max_name = name2
+            max_score = score
+           
+    return(max_name, max_score)    
+
+def handle_outlier_names(df):
+
+    # Loop through every row with an empty team field
+    for row in df['Team']:
+        #import ipdb; ipdb.set_trace()
+        #ax = 0
+        pass
+    return(df)
+
+# Function takes in an input of: 1) list of MLB team names and 2) the path to the dash app's asset folder
+# Output is a list of .jpeg images to embed in the app layout
+# We need them in the same order as the teams are showing
+def merge_team_logos(players_teams_df):
+
+    # Base dir - might need to make this dynamic in the future
+    file_path = 'C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logo_lookup.csv'
+    # Read in the lookup table 
+    team_logo_lookup_df = pd.read_csv(file_path)
+
+    # Merge the series/dataframe 
+    merged_df = pd.merge(players_teams_df, team_logo_lookup_df, how='left', left_on='Team', right_on='nickname')
+
+    # Conver to thumbnails??
+    #merged_df['logo'] = [get_thumbnail(logo_path) for logo_path in merged_df['logo_path']]
+    #merged_df['logo'] = [html.Img(src=app.get_asset_url('arizona_diamondbacks.jpeg')) for logo_path in merged_df['logo_path']]
+
+    return(merged_df)
+
+# This is used to insert CSS styling into the dash table from the app.py
+def get_team_colors():
+
+    style_block = [
+        {
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('ARI')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#D32D41',
+        'color': 'white'
+    },
+        {
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('ATL'),
+            #'column_id': 'nickname',
+        },
+        'backgroundColor': '#1C4E80',
+        'color': 'black'
+    },
+        {
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('BAL')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#EA6A47',
+        'color': 'white'
+    },
+        {
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('BOS')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#D32D41',
+        'color': 'white'
+    },
+        {
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('CHC')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#1C4E80',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('CHW')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#000000',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('CIN')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#D32D41',
+        'color': 'white'
+    },                
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('CLE')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#1C4E80',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('COL')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#703770',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('DET')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#1C4E80',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('HOU')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#EA6A47',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('KCR')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#0091D5',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('LAA')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#D32D41',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('LAD')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#0091D5',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('MIA')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#EA6A47',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('MIL')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#1C4E80',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('MIN')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#1C4E80',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('NYM')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#EA6A47',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('NYY')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#1C4E80',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('OAK')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#6AB187',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('PHI')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#D32D41',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('PIT')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#DBAE58',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('SDP')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#DBAE58',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('SFG')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#EA6A47',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('SEA')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#000000',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('STL')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#D32D41',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('TBR')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#488A99',
+        'color': 'white'
+    },
+        {
+
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('TEX')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#D32D41',
+        'color': 'white'
+    },
+
+        {
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('TOR')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#4CB5F5',
+        'color': 'white'
+    },
+        {
+        'if': {
+            'filter_query': '{{nickname}} = {}'.format('WAS')
+            #'column_id': ['nickname','player'],
+        },
+        'backgroundColor': '#D32D41',
+        'color': 'white'
+    }
+    ]    
+
+    return style_block

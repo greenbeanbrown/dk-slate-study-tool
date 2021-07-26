@@ -2,17 +2,24 @@ import base64
 import datetime
 import io
 
+import os
+import glob
+
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
 
+import dash_bootstrap_components as dbc
+
+import base64
+
 import pandas as pd
 
 import sys
 sys.path.insert(0, '..')
-from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users
+from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos, get_team_colors
 
 def generate_table(dataframe, max_rows=10):
     return html.Table([
@@ -25,6 +32,13 @@ def generate_table(dataframe, max_rows=10):
             ]) for i in range(min(len(dataframe), max_rows))
         ])
     ])
+
+
+mlb_team_colors = {'ARI':'red','ATL':'blue','BAL':'orange','BOS':'red','CHC':'blue','CHW':'black','CIN':'red','CLE':'blue','COL':'purple','DET':'blue','HOU':'orange','KCR':'blue','LAA':'red','LAD':'blue','MIA':'orange','MIL':'blue','MIN':'blue','NYM':'orange','NYY':'blue','OAK':'green','PHI':'red','PIT':'yellow','SDP':'yellow','SFG':'orange','SEA':'black','STL':'red','TBR':'blue','TEX':'red','TOR':'blue','WAS':'red'}
+
+#image_directory = '/Users/Sean/Documents/python/dk_slate_study_tool/data/mlb_logos/arizona_diamondbacks.jpeg'
+#image_filename = '/Users/Sean/Documents/python/dk_slate_study_tool/data/mlb_logos/arizona_diamondbacks.jpeg'
+#encoded_image = base64.b64encode(open(image_filename, 'rb').read())
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -59,15 +73,9 @@ app.layout = html.Div([
     html.Div(children=[
         html.H4(children='DK Slate Study Lineups')
         #generate_table(df)
-])
-    #html.Div(
-    #    dcc.Input(
-    #        id="input_text",
-    #        type="text",
-    #        placeholder="input text",
-    #    )
-    #),
-    #html.Div(id="out-all-types")
+    ]),
+    html.Img(src=app.get_asset_url('mlb_logos/arizona_diamondbacks.jpeg'))
+
 ])
 
 
@@ -89,6 +97,9 @@ def parse_contents(contents, filename, date):
             'There was an error processing this file.'
         ])
 
+    # Prep data prior to returning output 
+    #df = 
+
     return html.Div([
         html.H5(filename),
         #html.H6(datetime.datetime.fromtimestamp(date)),
@@ -96,11 +107,34 @@ def parse_contents(contents, filename, date):
         dash_table.DataTable(
             data = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0]).to_dict('records'),
             #data=df.to_dict('records'),
-            #columns=[{'name': i, 'id': i} for i in df.columns]
             columns=[{'name': i, 'id': i} for i in filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0]).columns],
 
-            sort_action="native"
+            sort_action="native",
             #sort_mode="multi"
+            style_data_conditional = (
+
+                get_team_colors()
+                #[
+                #    {
+                #        'if': {
+                #            'filter_query': '{{nickname}} = {}'.format('LAD')
+                #            #'column_id': ['nickname','player'],
+                #        },
+                #        'backgroundColor': '#0074D9',
+                #        'color': 'white'
+                #    },
+                #                        {
+                #        'if': {
+                #            'filter_query': '{{nickname}} = {}'.format('HOU'),
+                #            #'column_id': 'nickname',
+                #        },
+                #        'backgroundColor': '#EA6A47',
+                #        'color': 'black'
+                #    }
+                #    #for team_color in filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])['team_color']
+                #    #for i in df['team'].nlargest(3)
+                #]
+            )
         ),
 
         html.Hr(),  # horizontal line
@@ -126,18 +160,6 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
         return children
     else:
         pass
-
-#@app.callback(
-#    Output("out-all-types", "children"),
-#    #[Input("input_{}".format(_), "value") for _ in ALLOWED_TYPES],
-#     Input('input_text', "value"),
-#    )
-#def cb_render(*vals):
-#    return(str(val) for val in vals if val)
-
-          
-    #return " | ".join((str(val) for val in vals if val))
-
 
 
 if __name__ == '__main__':
