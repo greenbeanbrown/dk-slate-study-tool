@@ -110,30 +110,10 @@ def parse_contents(contents, filename, date):
             columns=[{'name': i, 'id': i} for i in filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0]).columns],
 
             sort_action="native",
+            filter_action='native',
             #sort_mode="multi"
             style_data_conditional = (
-
                 get_team_colors()
-                #[
-                #    {
-                #        'if': {
-                #            'filter_query': '{{nickname}} = {}'.format('LAD')
-                #            #'column_id': ['nickname','player'],
-                #        },
-                #        'backgroundColor': '#0074D9',
-                #        'color': 'white'
-                #    },
-                #                        {
-                #        'if': {
-                #            'filter_query': '{{nickname}} = {}'.format('HOU'),
-                #            #'column_id': 'nickname',
-                #        },
-                #        'backgroundColor': '#EA6A47',
-                #        'color': 'black'
-                #    }
-                #    #for team_color in filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])['team_color']
-                #    #for i in df['team'].nlargest(3)
-                #]
             )
         ),
 
@@ -146,7 +126,6 @@ def parse_contents(contents, filename, date):
             'wordBreak': 'break-all'
         })
     ])
-
 
 @app.callback(Output('output-data-upload', 'children'),
               Input('upload-data', 'contents'),

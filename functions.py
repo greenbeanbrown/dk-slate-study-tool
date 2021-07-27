@@ -136,8 +136,6 @@ def melt_crosstab(agg_lineups_df, user):
     # Get all lineups in a single dataframe for a specific user
     focus_lineups = agg_lineups_df[agg_lineups_df['EntryName'] == user]
 
-    #import ipdb; ipdb.set_trace()
-
     # Melt dataframe
     melted_lineup = focus_lineups.melt(var_name='columns', value_name='player')
     melted_lineup = melted_lineup[melted_lineup['columns'] != 'EntryName']
@@ -198,8 +196,10 @@ def filter_dk_users(agg_lineups_df, points_ownership_df):
         agg_exposures = agg_exposures.replace(np.nan, 0.0)    
     # Now merge the 2 datasets that we've created together into 1
     master_df = pd.merge(agg_exposures, points_ownership_df, on='player')
-    non_user_cols = ['player','position','points', 'ownership']
-    master_df = master_df[[*non_user_cols, *master_df.columns.difference(non_user_cols)]]
+    non_user_cols = ['player','Team', 'nickname','position','points', 'ownership']
+    
+    #master_df = master_df[[*non_user_cols, *master_df.columns.difference(non_user_cols)]]
+    master_df = master_df[[*non_user_cols, *dk_users]]
 
     master_df = master_df.sort_values('points', ascending=False)
 
