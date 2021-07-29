@@ -604,9 +604,6 @@ def store_uploaded_data(contents, filename, date):
             'There was an error processing this file.'
         ])
 
-    # Serialize the dataframe output as JSON so it can be stored
-    #json_df = df.to_json(date_format='iso', orient='split')
-
     return(df)
 
 # This takes in a file upload from the UI and returns an HTML table (of sorts..) of the data
@@ -661,39 +658,10 @@ def parse_contents(contents, filename, date):
 
 # This takes in a file upload from the UI and returns an HTML table (of sorts..) of the data
 def convert_df_to_html(json_serialized_df):
-    #content_type, content_string = contents.split(',')
-
-    #decoded = base64.b64decode(content_string)
-    
-
-    #try:
-    #    if 'csv' in filename:
-    #        # Assume that the user uploaded a CSV file
-    #        df = pd.read_csv(
-    #            io.StringIO(decoded.decode('utf-8')))
-#
-    #        # Perform data processing here
-    #        df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])
-#
-    #    elif 'xls' in filename:
-    #        # Assume that the user uploaded an excel file
-    #        df = pd.read_excel(io.BytesIO(decoded))
-    #        # Perform data processing here
-    #        df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])
-#
-#
-    #except Exception as e:
-    #    print(e)
-    #    return html.Div([
-    #        'There was an error processing this file.'
-    #    ])
-
 
     df = pd.read_json(json_serialized_df)
 
     return html.Div([
-        #html.H5(filename),
-        #html.H6(datetime.datetime.fromtimestamp(date)),
 
         dash_table.DataTable(
             data=df.to_dict('records'),
@@ -706,11 +674,4 @@ def convert_df_to_html(json_serialized_df):
         ),
 
         html.Hr(),  # horizontal line
-
-        # For debugging, display the raw contents provided by the web browser
-        #html.Div('Raw Content'),
-        #html.Pre(contents[0:200] + '...', style={
-        #    'whiteSpace': 'pre-wrap',
-        #    'wordBreak': 'break-all'
-        #})
     ])        

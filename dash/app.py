@@ -52,20 +52,14 @@ app.layout = html.Div([
     # Tabs
     html.Div([
             dcc.Tabs(id='tabs-example', value='tab-1', children=[
-            dcc.Tab(label='Tab one', value='tab-1', children=[html.Div(id='tabs-1-content')]),
-            dcc.Tab(label='Tab two', value='tab-2', children=[html.Div(id='tabs-2-content')]),
+            dcc.Tab(label='Aggregate Exposures', value='tab-1', children=[html.Div(id='tabs-1-content')]),
+            dcc.Tab(label='Individual Lineups', value='tab-2', children=[html.Div(id='tabs-2-content')]),
         ])
     
     ]),
-
-    #html.Div(id='output-data-upload'),
-    dcc.Store(id='output-data-upload'),
-
-
-    # Adding function to process data
-    html.Div(children=[
-        html.H4(children='DK Slate Study Lineups')
-    ]),
+    
+    # This component 'stores' the uploaded file data into the session memory so it can be passed through various callbacks
+    dcc.Store(id='output-data-upload')
 
 ])
 
@@ -96,7 +90,7 @@ def render_content(tab, data):
     
     else:
         return html.Div([
-            html.H3('Tab content 1'),
+            html.H3('Aggregate DK User Exposures for current contest'),
             convert_df_to_html(data)
         ])
 
@@ -104,7 +98,7 @@ def render_content(tab, data):
               Input('tabs-example', 'value'))
 def render_content(tab):
         return html.Div([
-            html.H3('Tab content 2')
+            html.H3('Individual Lineup Analyzer for current contest')
         ])
 
 if __name__ == '__main__':
