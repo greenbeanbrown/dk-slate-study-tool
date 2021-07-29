@@ -80,17 +80,24 @@ def store_data(list_of_contents, list_of_names, list_of_dates):
             store_uploaded_data(c, n, d) for c, n, d in zip(list_of_contents, list_of_names, list_of_dates)
             ]
         # Serialize the df output as JSON to store it in session
-        json_children = children[0].to_json(date_format='iso', orient='split')
+        #json_children = children[0].to_json(date_format='iso', orient='split')
+        json_children = children[0].to_json(date_format='iso', orient='columns')
 
         return json_children
     else:
         pass
 
 @app.callback(Output('tabs-1-content', 'children'),
-              Input('tabs-example', 'value'))
-def render_content(tab):
+              Input('tabs-example', 'value'),
+              Input('output-data-upload','data'))
+def render_content(tab, data):
+    if data is None:
+        pass
+    
+    else:
         return html.Div([
-            html.H3('Tab content 1')
+            html.H3('Tab content 1'),
+            convert_df_to_html(data)
         ])
 
 @app.callback(Output('tabs-2-content', 'children'),

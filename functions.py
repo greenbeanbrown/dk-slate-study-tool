@@ -14,6 +14,8 @@ import base64
 import os
 import io
 
+import json
+
 def prep_raw_dk_contest_data(raw_dk_contest_data, sport):
 
     # Take in 1 raw dataframe as an input
@@ -615,8 +617,7 @@ def parse_contents(contents, filename, date):
     try:
         if 'csv' in filename:
             # Assume that the user uploaded a CSV file
-            df = pd.read_csv(
-                io.StringIO(decoded.decode('utf-8')))
+            df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
 
             # Perform data processing here
             df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])
@@ -659,10 +660,12 @@ def parse_contents(contents, filename, date):
     ])    
 
 # This takes in a file upload from the UI and returns an HTML table (of sorts..) of the data
-def convert_df_to_html(df):
+def convert_df_to_html(json_serialized_df):
     #content_type, content_string = contents.split(',')
 
     #decoded = base64.b64decode(content_string)
+    
+
     #try:
     #    if 'csv' in filename:
     #        # Assume that the user uploaded a CSV file
@@ -684,6 +687,9 @@ def convert_df_to_html(df):
     #    return html.Div([
     #        'There was an error processing this file.'
     #    ])
+
+
+    df = pd.read_json(json_serialized_df)
 
     return html.Div([
         #html.H5(filename),
