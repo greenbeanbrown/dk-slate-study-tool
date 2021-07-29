@@ -20,7 +20,7 @@ import pandas as pd
 import sys
 
 sys.path.insert(0, '..')
-from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos, get_team_colors, parse_contents, generate_table
+from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos, get_team_colors, parse_contents, generate_table, store_uploaded_data, convert_df_to_html
 
 mlb_team_colors = {'ARI':'red','ATL':'blue','BAL':'orange','BOS':'red','CHC':'blue','CHW':'black','CIN':'red','CLE':'blue','COL':'purple','DET':'blue','HOU':'orange','KCR':'blue','LAA':'red','LAD':'blue','MIA':'orange','MIL':'blue','MIN':'blue','NYM':'orange','NYY':'blue','OAK':'green','PHI':'red','PIT':'yellow','SDP':'yellow','SFG':'orange','SEA':'black','STL':'red','TBR':'blue','TEX':'red','TOR':'blue','WAS':'red'}
 
@@ -52,45 +52,53 @@ app.layout = html.Div([
     # Tabs
     html.Div([
             dcc.Tabs(id='tabs-example', value='tab-1', children=[
-            dcc.Tab(label='Tab one', value='tab-1', children=[html.Div(id='tabs-1-content')]),
-            dcc.Tab(label='Tab two', value='tab-2', children=[html.Div(id='tabs-2-content')]),
+            dcc.Tab(label='Aggregate Exposures', value='tab-1', children=[html.Div(id='tabs-1-content')]),
+            dcc.Tab(label='Individual Lineups', value='tab-2', children=[html.Div(id='tabs-2-content')]),
         ])
     
     ]),
-
-    html.Div(id='output-data-upload'),
-    # Adding function to process data
-    html.Div(children=[
-        html.H4(children='DK Slate Study Lineups')
-    ]),
+    
+    # This component 'stores' the uploaded file data into the session memory so it can be passed through various callbacks
+    dcc.Store(id='output-data-upload')
 
 ])
 
-@app.callback(Output('output-data-upload', 'children'),
+@app.callback(Output('output-data-upload', 'data'),
               Input('upload-data', 'contents'),
               State('upload-data', 'filename'),
               State('upload-data', 'last_modified'))
-def update_output(list_of_contents, list_of_names, list_of_dates):
+def store_data(list_of_contents, list_of_names, list_of_dates):
     if list_of_contents is not None:
         children = [
-            parse_contents(c, n, d) for c, n, d in
-            zip(list_of_contents, list_of_names, list_of_dates)]
-        return children
+            #parse_contents(c, n, d) for c, n, d in zip(list_of_contents, list_of_names, list_of_dates)
+            store_uploaded_data(c, n, d) for c, n, d in zip(list_of_contents, list_of_names, list_of_dates)
+            ]
+        # Serialize the df output as JSON to store it in session
+        #json_children = children[0].to_json(date_format='iso', orient='split')
+        json_children = children[0].to_json(date_format='iso', orient='columns')
+
+        return json_children
     else:
         pass
 
 @app.callback(Output('tabs-1-content', 'children'),
-              Input('tabs-example', 'value'))
-def render_content(tab):
+              Input('tabs-example', 'value'),
+              Input('output-data-upload','data'))
+def render_content(tab, data):
+    if data is None:
+        pass
+    
+    else:
         return html.Div([
-            html.H3('Tab content 1')
+            html.H3('Aggregate DK User Exposures for current contest'),
+            convert_df_to_html(data)
         ])
 
 @app.callback(Output('tabs-2-content', 'children'),
               Input('tabs-example', 'value'))
 def render_content(tab):
         return html.Div([
-            html.H3('Tab content 2')
+            html.H3('Individual Lineup Analyzer for current contest')
         ])
 
 if __name__ == '__main__':
