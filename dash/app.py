@@ -18,6 +18,7 @@ import base64
 import pandas as pd
 
 import sys
+
 sys.path.insert(0, '..')
 from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos, get_team_colors, parse_contents, generate_table
 
@@ -26,10 +27,6 @@ mlb_team_colors = {'ARI':'red','ATL':'blue','BAL':'orange','BOS':'red','CHC':'bl
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
-ALLOWED_TYPES = (
-    "text", "number"
-)
 
 app.layout = html.Div([
     dcc.Upload(
@@ -51,13 +48,21 @@ app.layout = html.Div([
         # Allow multiple files to be uploaded
         multiple=True
     ),
+
+    # Tabs
+    html.Div([
+            dcc.Tabs(id='tabs-example', value='tab-1', children=[
+            dcc.Tab(label='Tab one', value='tab-1', children=[html.Div(id='tabs-1-content')]),
+            dcc.Tab(label='Tab two', value='tab-2', children=[html.Div(id='tabs-2-content')]),
+        ])
+    
+    ]),
+
     html.Div(id='output-data-upload'),
     # Adding function to process data
     html.Div(children=[
         html.H4(children='DK Slate Study Lineups')
-        #generate_table(df)
     ]),
-    html.Img(src=app.get_asset_url('mlb_logos/arizona_diamondbacks.jpeg'))
 
 ])
 
@@ -74,6 +79,19 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
     else:
         pass
 
+@app.callback(Output('tabs-1-content', 'children'),
+              Input('tabs-example', 'value'))
+def render_content(tab):
+        return html.Div([
+            html.H3('Tab content 1')
+        ])
+
+@app.callback(Output('tabs-2-content', 'children'),
+              Input('tabs-example', 'value'))
+def render_content(tab):
+        return html.Div([
+            html.H3('Tab content 2')
+        ])
 
 if __name__ == '__main__':
     app.run_server(debug=True)

@@ -586,9 +586,16 @@ def parse_contents(contents, filename, date):
             # Assume that the user uploaded a CSV file
             df = pd.read_csv(
                 io.StringIO(decoded.decode('utf-8')))
+
+            df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])
+
         elif 'xls' in filename:
             # Assume that the user uploaded an excel file
             df = pd.read_excel(io.BytesIO(decoded))
+            # Perform data processing here
+            df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])
+
+
     except Exception as e:
         print(e)
         return html.Div([
@@ -600,13 +607,10 @@ def parse_contents(contents, filename, date):
         #html.H6(datetime.datetime.fromtimestamp(date)),
 
         dash_table.DataTable(
-            data = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0]).to_dict('records'),
-            #data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0]).columns],
-
+            data=df.to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in df.columns],
             sort_action="native",
             filter_action='native',
-            #sort_mode="multi"
             style_data_conditional = (
                 get_team_colors()
             )
