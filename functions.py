@@ -34,7 +34,11 @@ def prep_raw_dk_contest_data(raw_dk_contest_data, sport):
         raise ValueError('incorrect sport type entered as input')
 
     # Merge player team and position data for reference (should always be in same dir)
-    player_team_pos_df = pd.read_csv('C:/Users/Sean/Documents/python/dk_slate_study_tool/data/mlb_players_pos_teams_data.csv') 
+    #player_team_pos_df = pd.read_csv('C:/Users/Sean/Documents/python/dk_slate_study_tool/data/mlb_players_pos_teams_data.csv') 
+    player_team_pos_df = pd.read_csv('assets/mlb_players_pos_teams_data.csv') 
+
+
+
     # Fuzzy match the player names to the lookup df with every player
     player_team_pos_df['player'] = [match_name(player_name, points_ownership_df['player'])[0] for player_name in player_team_pos_df['Player']]
     player_team_pos_df = handle_outlier_names(player_team_pos_df)
@@ -265,9 +269,8 @@ def handle_outlier_names(df):
 
     # Loop through every row with an empty team field
     for row in df['Team']:
-        #import ipdb; ipdb.set_trace()
-        #ax = 0
         pass
+
     return(df)
 
 # Function takes in an input of: 1) list of MLB team names and 2) the path to the dash app's asset folder
@@ -277,6 +280,7 @@ def merge_team_logos(players_teams_df):
 
     # Base dir - might need to make this dynamic in the future
     file_path = 'C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logo_lookup.csv'
+    
     # Read in the lookup table 
     team_logo_lookup_df = pd.read_csv(file_path)
 
@@ -603,7 +607,7 @@ def convert_df_to_html(df):
 
 
 # Used by the Individual Lineup Analyzer to filter the data by user
-def parse_mlb_lineup(lineups_df, entry_name):
+def parse_mlb_lineup(lineups_df, player_team_pos_df, entry_name):
     
     # Get the lineup for that exact entry_name
     entry_lineup = lineups_df[lineups_df['raw_entry_name'] == entry_name]
@@ -614,16 +618,51 @@ def parse_mlb_lineup(lineups_df, entry_name):
     
     # Final columns and order
     output_cols = ['Rank', 'Points', 'Lineup Name', 'P1','P2','C','1B','2B','3B','SS','OF1','OF2','OF3']
+    non_player_cols = ['Rank','Points','Lineup Name']
     entry_lineup = entry_lineup[output_cols]
 
     # Transpose the dataframe for readability
     entry_lineup = entry_lineup.transpose()
+    entry_lineup.columns = ['Data']
+
+    ### START
     
+    # Fuzzy match the player names to the lookup df with every player
+    #entry_lineup['Player'] = [match_name(player_name, player_team_pos_df['Player'])[0] for player_name in entry_lineup[entry_lineup.columns.difference(non_player_cols)]]
+
+    #name_matches = [match_name(player_name, player_team_pos_df['Player'])[0] for player_name in entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0]]
+    #entry_lineup['name_match'] = [match_name(player_name, player_team_pos_df['Player'])[0] for player_name in entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0]]
+
+    # Get the name matches - this is a dict with key being position and value being the player
+    name_matches = {index:[match_name(value, player_team_pos_df['Player'])[0]] for index, value in zip(entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].index, entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0])}
+    # Create a dataframe of the matches from the dictionary
+    matches_df = pd.DataFrame.from_dict(name_matches).transpose()
+    matches_df.columns = ['player_match']
+    matches_df['position'] = matches_df.index
+
+    # Merge the team data
+    merged_matches_df = pd.merge(matches_df, player_team_pos_df[['Player','Team']], how='left', left_on='player_match', right_on='Player')
+    merged_matches_df = merged_matches_df[['player_match', 'position','Team']]
+
+    # Then merge to the entry_lineup
+    entry_lineup = pd.merge(entry_lineup, merged_matches_df, left_index=True, right_index=False, right_on='position', how='left')
+    # This is mostly just handling empty rows - prob not necessary
+    #entry_lineup = handle_outlier_names(player_team_pos_df)
+    entry_lineup.rename(columns={'position':'Lineup Info'}, inplace=True)
+    entry_lineup = entry_lineup[['Lineup Info','Data','Team']]
+
+    #entry_lineup.drop(['Player','Pos'], axis=1, inplace=True)
+
+    # Finally, merge the team names over to the entry lineup
+    
+
+    ### END
+
     # Clean up some column headers
-    entry_lineup.columns = ['Lineup Data']
-    entry_lineup['Info'] = entry_lineup.index
+    #entry_lineup.columns = ['Lineup Data']
+    #entry_lineup['Info'] = entry_lineup.index
 
     # Re-order columns for final output
-    entry_lineup = entry_lineup[['Info', 'Lineup Data']]
+    #entry_lineup = entry_lineup[['Info', 'Lineup Data']]
 
     return(entry_lineup)

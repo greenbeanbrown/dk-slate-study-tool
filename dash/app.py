@@ -27,6 +27,9 @@ sys.path.insert(0, '..')
 from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos, get_team_colors,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup
 
 mlb_team_colors = {'ARI':'red','ATL':'blue','BAL':'orange','BOS':'red','CHC':'blue','CHW':'black','CIN':'red','CLE':'blue','COL':'purple','DET':'blue','HOU':'orange','KCR':'blue','LAA':'red','LAD':'blue','MIA':'orange','MIL':'blue','MIN':'blue','NYM':'orange','NYY':'blue','OAK':'green','PHI':'red','PIT':'yellow','SDP':'yellow','SFG':'orange','SEA':'black','STL':'red','TBR':'blue','TEX':'red','TOR':'blue','WAS':'red'}
+player_team_pos_df = pd.read_csv('assets/mlb_players_pos_teams_data.csv') 
+
+
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -149,7 +152,7 @@ def inidividual_lineups_tab_content(tab, data, dropdown_selection):
 
         df = cleanup_mlb_lineup_data(df)
         # Filter the individual lineup down based on dropdown menu user input
-        df = parse_mlb_lineup(df, dk_user)
+        df = parse_mlb_lineup(df, player_team_pos_df, dk_user)
 
         return html.Div([
             html.H3('Individual Lineup Analyzer for current contest'),
