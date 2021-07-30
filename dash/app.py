@@ -131,9 +131,14 @@ def aggregate_exposures_tab_content(tab, data):
 
 @app.callback(Output('tabs-2-content', 'children'),
               Input('tabs-example', 'value'),
-              Input('output-data-upload','data'))
-def inidividual_lineups_tab_content(tab, data):
+              Input('output-data-upload','data'),
+              Input('dk-user-dropdown','value'))
+def inidividual_lineups_tab_content(tab, data, dropdown_selection):
 
+    # This gives us the current value of the DK User dropdown, because we used the 'value' property as the input
+    dk_user = dropdown_selection
+
+    # Check for data upload
     if data is None:
         pass
 
@@ -143,7 +148,8 @@ def inidividual_lineups_tab_content(tab, data):
         df = pd.DataFrame.from_dict(data, orient='columns')
 
         df = cleanup_mlb_lineup_data(df)
-        df = parse_mlb_lineup(df, 'youdacao (3/3)')
+        #df = parse_mlb_lineup(df, 'youdacao (3/3)')
+        df = parse_mlb_lineup(df, dk_user)
 
         return html.Div([
             html.H3('Individual Lineup Analyzer for current contest'),
