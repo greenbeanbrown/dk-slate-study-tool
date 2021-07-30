@@ -179,20 +179,21 @@ def filter_dk_users(agg_lineups_df, points_ownership_df):
     user_data_dict = {}
 
     for user in dk_users:
-        user_data_dict[user] = melt_crosstab(agg_lineups_df, user)
         # Use this for MMA
         #user_data_dict[user]['F'] = user_data_dict[user][['F1','F2','F3','F4','F5','F6']].sum(axis=1)
         try:
-            user_data_dict[user] = user_data_dict[user][['player','count','exposure']]
+            user_exposures = melt_crosstab(agg_lineups_df, user)[['player','count','exposure']]
+            user_data_dict[user] = user_exposures
         except:
             print('Error with ', user)
             # Remove that user from the list to prevent more errors
-            dk_users.remove(user)
+            #dk_users.remove(user)
 
     # Aggregate the various dataframes into a single one
     agg_exposures = pd.DataFrame()
-
-    for user in dk_users:
+    
+    #for user in dk_users:
+    for user in list(user_data_dict.keys()):
         if user == dk_users[0]:
             agg_exposures = user_data_dict[user][['player','exposure']].round(2)
             agg_exposures.rename(columns={'exposure':user}, inplace=True)
@@ -206,8 +207,9 @@ def filter_dk_users(agg_lineups_df, points_ownership_df):
     non_user_cols = ['player','Team', 'nickname','position','points', 'ownership']
     
     #master_df = master_df[[*non_user_cols, *master_df.columns.difference(non_user_cols)]]
-    master_df = master_df[[*non_user_cols, *dk_users]]
-
+    #master_df = master_df[[*non_user_cols, *dk_users]]
+    master_df = master_df[[*non_user_cols, *list(user_data_dict.keys())]]
+    
     master_df = master_df.sort_values('points', ascending=False)
 
     return(master_df)
