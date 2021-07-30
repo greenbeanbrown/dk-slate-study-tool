@@ -625,14 +625,7 @@ def parse_mlb_lineup(lineups_df, player_team_pos_df, entry_name):
     entry_lineup = entry_lineup.transpose()
     entry_lineup.columns = ['Data']
 
-    ### START
-    
     # Fuzzy match the player names to the lookup df with every player
-    #entry_lineup['Player'] = [match_name(player_name, player_team_pos_df['Player'])[0] for player_name in entry_lineup[entry_lineup.columns.difference(non_player_cols)]]
-
-    #name_matches = [match_name(player_name, player_team_pos_df['Player'])[0] for player_name in entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0]]
-    #entry_lineup['name_match'] = [match_name(player_name, player_team_pos_df['Player'])[0] for player_name in entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0]]
-
     # Get the name matches - this is a dict with key being position and value being the player
     name_matches = {index:[match_name(value, player_team_pos_df['Player'])[0]] for index, value in zip(entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].index, entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0])}
     # Create a dataframe of the matches from the dictionary
@@ -648,21 +641,7 @@ def parse_mlb_lineup(lineups_df, player_team_pos_df, entry_name):
     entry_lineup = pd.merge(entry_lineup, merged_matches_df, left_index=True, right_index=False, right_on='position', how='left')
     # This is mostly just handling empty rows - prob not necessary
     #entry_lineup = handle_outlier_names(player_team_pos_df)
-    entry_lineup.rename(columns={'position':'Lineup Info'}, inplace=True)
-    entry_lineup = entry_lineup[['Lineup Info','Data','Team']]
-
-    #entry_lineup.drop(['Player','Pos'], axis=1, inplace=True)
-
-    # Finally, merge the team names over to the entry lineup
-    
-
-    ### END
-
-    # Clean up some column headers
-    #entry_lineup.columns = ['Lineup Data']
-    #entry_lineup['Info'] = entry_lineup.index
-
-    # Re-order columns for final output
-    #entry_lineup = entry_lineup[['Info', 'Lineup Data']]
+    entry_lineup.rename(columns={'position':'Lineup Info', 'Team':'nickname'}, inplace=True)
+    entry_lineup = entry_lineup[['Lineup Info','Data','nickname']]
 
     return(entry_lineup)
