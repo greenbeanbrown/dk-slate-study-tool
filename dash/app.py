@@ -9,7 +9,10 @@ import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
+from dash.exceptions import PreventUpdate
+
 import dash_table
+
 
 import dash_bootstrap_components as dbc
 
@@ -21,7 +24,7 @@ import pandas as pd
 import sys
 
 sys.path.insert(0, '..')
-from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos, get_team_colors, parse_contents, generate_table, parse_uploaded_data, convert_df_to_html, parse_mlb_lineup
+from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos, get_team_colors,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup
 
 mlb_team_colors = {'ARI':'red','ATL':'blue','BAL':'orange','BOS':'red','CHC':'blue','CHW':'black','CIN':'red','CLE':'blue','COL':'purple','DET':'blue','HOU':'orange','KCR':'blue','LAA':'red','LAD':'blue','MIA':'orange','MIL':'blue','MIN':'blue','NYM':'orange','NYY':'blue','OAK':'green','PHI':'red','PIT':'yellow','SDP':'yellow','SFG':'orange','SEA':'black','STL':'red','TBR':'blue','TEX':'red','TOR':'blue','WAS':'red'}
 
@@ -54,7 +57,7 @@ app.layout = html.Div([
     html.Div([
             dcc.Tabs(id='tabs-example', value='tab-1', children=[
             dcc.Tab(label='Aggregate Exposures', value='tab-1', children=[html.Div(id='tabs-1-content')]),
-            dcc.Tab(label='Individual Lineups', value='tab-2', children=[html.Div(id='tabs-2-content')]),
+            dcc.Tab(label='Individual Lineups', value='tab-2', children=[dcc.Dropdown(id='dk-user-dropdown'), html.Div(id='tabs-2-content')]),
         ])
     
     ]),
@@ -79,6 +82,30 @@ def store_raw_data(list_of_contents, list_of_names, list_of_dates):
         return json_children
     else:
         pass
+
+
+@app.callback(Output('dk-user-dropdown', 'options'),
+              Input('output-data-upload','data'))
+def update_tab2_dropdown(data):
+    # If there is no data uploaded
+    if data is None:
+        raise PreventUpdate
+    # If there is data
+    else:
+        # Convert serialized JSON stirng into dataframe
+        data = json.loads(data)
+        df = pd.DataFrame.from_dict(data, orient='columns')
+
+        # Get every value from data.raw_entry_name into a list for the dropdown
+        # We can just grab EntryName here because this data has not been cleaned yet - it's the raw upload data
+        dk_users = df['EntryName']
+
+        return [
+                { 
+                    'label': user,
+                    'value' : user
+                } for user in dk_users
+                ]
 
 @app.callback(Output('tabs-1-content', 'children'),
               Input('tabs-example', 'value'),
