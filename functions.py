@@ -109,6 +109,7 @@ def cleanup_mlb_lineup_data(raw_lineup_data):
     clean_lineup_data = clean_lineup_data.dropna()
 
     # Clean the username field - it comes out with extra chars 
+    clean_lineup_data['raw_entry_name'] = clean_lineup_data['EntryName']
     clean_lineup_data['EntryName'] = clean_lineup_data['EntryName'].apply(lambda row: clean_entry_name(row))
 
     # Replace all position substrings with ##, which we can use to split the lineups easily with - then we will add the positions back after
@@ -576,8 +577,8 @@ def generate_table(dataframe, max_rows=10):
         ])
     ])
 
-# This takes in a file upload from the UI and returns an HTML table (of sorts..) of the data
-def store_uploaded_data(contents, filename, date):
+# This takes in a file upload from the UI and returns a dataframe version
+def parse_uploaded_data(contents, filename, date):
     content_type, content_string = contents.split(',')
 
     decoded = base64.b64decode(content_string)
@@ -589,13 +590,14 @@ def store_uploaded_data(contents, filename, date):
                 io.StringIO(decoded.decode('utf-8')))
                 
             # Perform data processing here
-            df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])
+            #df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])
+            #df = cleanup_mlb_lineup_data(df)
 
         elif 'xls' in filename:
             # Assume that the user uploaded an excel file
             df = pd.read_excel(io.BytesIO(decoded))
             # Perform data processing here
-            df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])
+            #df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])
 
 
     except Exception as e:
@@ -657,9 +659,9 @@ def parse_contents(contents, filename, date):
     ])    
 
 # This takes in a file upload from the UI and returns an HTML table (of sorts..) of the data
-def convert_df_to_html(json_serialized_df):
+def convert_df_to_html(df):
 
-    df = pd.read_json(json_serialized_df)
+    #df = pd.read_json(json_serialized_df)
 
     return html.Div([
 
@@ -675,3 +677,21 @@ def convert_df_to_html(json_serialized_df):
 
         html.Hr(),  # horizontal line
     ])        
+
+
+# Used by the Individual Lineup Analyzer to filter the data by user
+def parse_mlb_lineup(lineups_df, entry_name):
+    
+    # Get the lineup for that exact entry_name
+    entry_lineup = lineups_df[lineups_df['raw_entry_name'] == entry_name]
+    
+    # Clean up some columns
+    entry_lineup['DK User'] = entry_lineup['EntryName']
+    #entry_lineup['Lineup Name'] == entry_lineup['raw_lineup_name']
+    
+    # Final columns and order
+    output_cols = ['Rank', 'Points', 'DK User', 'P1','P2','C','1B','2B','3B','SS','OF1','OF2','OF3']
+    
+    entry_lineup = entry_lineup.transpose()
+
+    return(entry_lineup)
