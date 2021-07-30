@@ -609,12 +609,21 @@ def parse_mlb_lineup(lineups_df, entry_name):
     entry_lineup = lineups_df[lineups_df['raw_entry_name'] == entry_name]
     
     # Clean up some columns
-    entry_lineup['DK User'] = entry_lineup['EntryName']
-    #entry_lineup['Lineup Name'] == entry_lineup['raw_lineup_name']
+    #entry_lineup['DK User'] = entry_lineup['EntryName']
+    entry_lineup['Lineup Name'] = entry_lineup['raw_entry_name']
     
     # Final columns and order
-    output_cols = ['Rank', 'Points', 'DK User', 'P1','P2','C','1B','2B','3B','SS','OF1','OF2','OF3']
-    
+    output_cols = ['Rank', 'Points', 'Lineup Name', 'P1','P2','C','1B','2B','3B','SS','OF1','OF2','OF3']
+    entry_lineup = entry_lineup[output_cols]
+
+    # Transpose the dataframe for readability
     entry_lineup = entry_lineup.transpose()
+    
+    # Clean up some column headers
+    entry_lineup.columns = ['Lineup Data']
+    entry_lineup['Info'] = entry_lineup.index
+
+    # Re-order columns for final output
+    entry_lineup = entry_lineup[['Info', 'Lineup Data']]
 
     return(entry_lineup)

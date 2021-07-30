@@ -139,7 +139,7 @@ def inidividual_lineups_tab_content(tab, data, dropdown_selection):
     dk_user = dropdown_selection
 
     # Check for data upload
-    if data is None:
+    if (data is None) or (dropdown_selection is None):
         pass
 
     else:
@@ -148,7 +148,7 @@ def inidividual_lineups_tab_content(tab, data, dropdown_selection):
         df = pd.DataFrame.from_dict(data, orient='columns')
 
         df = cleanup_mlb_lineup_data(df)
-        #df = parse_mlb_lineup(df, 'youdacao (3/3)')
+        # Filter the individual lineup down based on dropdown menu user input
         df = parse_mlb_lineup(df, dk_user)
 
         return html.Div([
