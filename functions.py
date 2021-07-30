@@ -607,7 +607,7 @@ def convert_df_to_html(df):
 
 
 # Used by the Individual Lineup Analyzer to filter the data by user
-def parse_mlb_lineup(lineups_df, player_team_pos_df, entry_name):
+def parse_mlb_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_name):
     
     # Get the lineup for that exact entry_name
     entry_lineup = lineups_df[lineups_df['raw_entry_name'] == entry_name]
@@ -639,9 +639,13 @@ def parse_mlb_lineup(lineups_df, player_team_pos_df, entry_name):
 
     # Then merge to the entry_lineup
     entry_lineup = pd.merge(entry_lineup, merged_matches_df, left_index=True, right_index=False, right_on='position', how='left')
-    # This is mostly just handling empty rows - prob not necessary
-    #entry_lineup = handle_outlier_names(player_team_pos_df)
-    entry_lineup.rename(columns={'position':'Lineup Info', 'Team':'nickname'}, inplace=True)
-    entry_lineup = entry_lineup[['Lineup Info','Data','nickname']]
 
+    # Merge entry_lineup with points_ownership and get the points, ownership
+    entry_lineup = pd.merge(entry_lineup, points_ownership_df[['player','ownership','points']], how='left', left_on='Data', right_on='player')
+
+    # This is mostly just handling empty rows - prob not necessary
+    entry_lineup.rename(columns={'position':'Lineup Info', 'Team':'nickname','ownership':'Ownership','points':'Points'}, inplace=True)
+    entry_lineup = entry_lineup[['Lineup Info','Data','nickname','Ownership','Points']]
+    
     return(entry_lineup)
+
