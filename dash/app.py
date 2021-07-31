@@ -24,8 +24,7 @@ import pandas as pd
 import sys
 
 sys.path.insert(0, '..')
-from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup, create_points_own_df
-
+from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup, create_points_own_df, calculate_mlb_stacks
 mlb_team_colors = {'ARI':'red','ATL':'blue','BAL':'orange','BOS':'red','CHC':'blue','CHW':'black','CIN':'red','CLE':'blue','COL':'purple','DET':'blue','HOU':'orange','KCR':'blue','LAA':'red','LAD':'blue','MIA':'orange','MIL':'blue','MIN':'blue','NYM':'orange','NYY':'blue','OAK':'green','PHI':'red','PIT':'yellow','SDP':'yellow','SFG':'orange','SEA':'black','STL':'red','TBR':'blue','TEX':'red','TOR':'blue','WAS':'red'}
 player_team_pos_df = pd.read_csv('assets/mlb_players_pos_teams_data.csv') 
 
@@ -152,13 +151,21 @@ def inidividual_lineups_tab_content(tab, data, dropdown_selection):
         points_ownership_df = create_points_own_df(df)
 
         df = cleanup_mlb_lineup_data(df)
+
+
+
         # Filter the individual lineup down based on dropdown menu user input
         df = parse_mlb_lineup(df, points_ownership_df, player_team_pos_df, dk_user)
+
+        # Get stack data
+        stacks_df = calculate_mlb_stacks(df)
 
         return html.Div([
             html.H3('Individual Lineup Analyzer for current contest'),
             # Convert the processed data into an HTML table for output
-            convert_df_to_html(df)
+            convert_df_to_html(df),
+            convert_df_to_html(stacks_df)
+            #html.H3(stacks_df)
         ])
 
 if __name__ == '__main__':

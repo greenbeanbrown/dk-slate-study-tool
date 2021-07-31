@@ -651,3 +651,14 @@ def parse_mlb_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_
     
     return(entry_lineup)
 
+def calculate_mlb_stacks(entry_lineup_df):
+
+
+    # Trim the dataframe down to avoid pitchers in the count
+    working_df = entry_lineup_df[~entry_lineup_df['Lineup Info'].isin(['P1','P2'])]
+
+    stacks_series = working_df.groupby('nickname')['nickname'].count()
+    stacks_df = pd.DataFrame(stacks_series).transpose()
+    stacks_df.reset_index(drop=True, inplace=True)
+
+    return(stacks_df)
