@@ -662,12 +662,51 @@ def calculate_mlb_stacks(entry_lineup_df):
     working_df['Count'] = working_df.groupby('Team')['Team'].transform('count')
     working_df = working_df[['logo_path','Team','Count']].dropna()
 
+    working_df = working_df.drop_duplicates().sort_values('Count', ascending=False)
+
     stacks_df = working_df 
     #stacks_series = working_df.groupby('Team')['Team'].count()
     #stacks_df = pd.DataFrame(stacks_series).transpose()
     #stacks_df.reset_index(drop=True, inplace=True)
 
     # We are going to return a list of triples as the output, that way its easy to iterate and unpack into the HTML 
-    stacks_output = (working_df['logo_path'], working_df['Team'], working_df['Count'])
+    #stacks_output = (working_df['logo_path'], working_df['Team'], working_df['Count'])
 
-    return(stacks_output)
+    return(stacks_df)
+
+
+# This function takes in a triple that contains the stack info and styles it into HTML for the app.layout()
+def convert_stacks_to_html(app, stacks_df):
+
+    # This function parses each team's stack info into an html, this will be applied to each element of the input
+    def create_stack_html_row(stack_row):
+        # Just grabbing the path here to make it cleaner
+        logo_path = app.get_asset_url('mlb_logos/' + os.path.basename(stack_row['logo_path']))
+
+        html_block = html.Div(children=[
+            # Team logo
+            html.Div(
+                html.Img(src=logo_path), 
+                style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
+            # Team name 
+            html.Div(
+                html.H3(stack_row['Team']),
+                style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
+            # Stack count
+            html.Div(
+                html.H3(stack_row['Count']),
+                style={'textAlign':'center', 'width':'15%','display':'inline-block'})
+        ])
+        
+        return(html_block)
+    
+    stacks_html_blocks = []
+
+    # General idea here is we loop through each element of the triple and apply the HTML template structure to each element
+    for index, row in stacks_df.iterrows():
+
+        stacks_html_blocks.append(create_stack_html_row(row))
+
+    #import ipdb; ipdb.set_trace()
+
+    return(stacks_html_blocks)
