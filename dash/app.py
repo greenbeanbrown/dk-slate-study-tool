@@ -63,7 +63,9 @@ app.layout = html.Div([
     ]),
     
     # This component 'stores' the uploaded file data into the session memory so it can be passed through various callbacks
-    dcc.Store(id='output-data-upload')
+    dcc.Store(id='output-data-upload'),
+    #html.Img(src=app.get_asset_url('mlb_logos/arizona_diamondbacks.jpeg'))
+    #html.Img(src='C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/cincinnati_reds.jpeg')
 
 ])
 
@@ -158,13 +160,33 @@ def inidividual_lineups_tab_content(tab, data, dropdown_selection):
         df = parse_mlb_lineup(df, points_ownership_df, player_team_pos_df, dk_user)
 
         # Get stack data
-        stacks_df = calculate_mlb_stacks(df)
+        stacks_triple = calculate_mlb_stacks(df)
+        
+        test_output = (stacks_triple[0].iloc[0], stacks_triple[1].iloc[0], stacks_triple[2].iloc[0])
+
+        html_output = html.Div([
+                                # Team logo
+                                html.Div(
+                                    html.Img(src=app.get_asset_url('mlb_logos/' + os.path.basename(test_output[0]))), 
+                                    style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
+                                # Team name 
+                                html.Div(
+                                    html.H3(test_output[1]),
+                                    style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
+                                # Stack count
+                                html.Div(
+                                    html.H3(test_output[2]),
+                                    style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
+        ])
+
+
 
         return html.Div([
             html.H3('Individual Lineup Analyzer for current contest'),
             # Convert the processed data into an HTML table for output
             convert_df_to_html(df),
-            convert_df_to_html(stacks_df)
+            #convert_df_to_html(stacks_df),
+            html_output
             #html.H3(stacks_df)
         ])
 

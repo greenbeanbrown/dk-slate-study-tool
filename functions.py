@@ -656,9 +656,18 @@ def calculate_mlb_stacks(entry_lineup_df):
 
     # Trim the dataframe down to avoid pitchers in the count
     working_df = entry_lineup_df[~entry_lineup_df['Lineup Info'].isin(['P1','P2'])]
+    working_df.rename(columns={'nickname':'Team'}, inplace=True)
 
-    stacks_series = working_df.groupby('nickname')['nickname'].count()
-    stacks_df = pd.DataFrame(stacks_series).transpose()
-    stacks_df.reset_index(drop=True, inplace=True)
+    working_df = merge_team_logos(working_df)
+    working_df['Count'] = working_df.groupby('Team')['Team'].transform('count')
+    working_df = working_df[['logo_path','Team','Count']].dropna()
 
-    return(stacks_df)
+    stacks_df = working_df 
+    #stacks_series = working_df.groupby('Team')['Team'].count()
+    #stacks_df = pd.DataFrame(stacks_series).transpose()
+    #stacks_df.reset_index(drop=True, inplace=True)
+
+    # We are going to return a list of triples as the output, that way its easy to iterate and unpack into the HTML 
+    stacks_output = (working_df['logo_path'], working_df['Team'], working_df['Count'])
+
+    return(stacks_output)
