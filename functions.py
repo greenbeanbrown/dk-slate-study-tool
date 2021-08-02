@@ -169,11 +169,11 @@ def melt_crosstab(agg_lineups_df, user):
 
 # This function will take in a list of provided DK usernames and a df with aggregate lineup data (which is the output of cleanup_mlb_lineup_data()
 # The return is a filtered dataframe containing only the data of those users exposures and related info
-def filter_dk_users(agg_lineups_df, points_ownership_df):
+def filter_dk_users(agg_lineups_df, points_ownership_df, dk_users):
 #def filter_dk_users(agg_lineups_df, dk_users_list):
 
     # Make this a dynamic input !!!
-    dk_users = ['Awesemo', 'giantsquid', 'bkreider', 'dacoltz', 'getloose', 'totoroll33', 'BigT44', 'thepickler']
+    #dk_users = ['Awesemo', 'giantsquid', 'bkreider', 'dacoltz', 'getloose', 'totoroll33', 'BigT44', 'thepickler']
 
     # Loop through each user and create a dictionary with their data
     user_data_dict = {}

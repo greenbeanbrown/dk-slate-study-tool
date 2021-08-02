@@ -56,16 +56,16 @@ app.layout = html.Div([
     # Tabs
     html.Div([
             dcc.Tabs(id='tabs-example', value='tab-1', children=[
-            dcc.Tab(label='Aggregate Exposures', value='tab-1', children=[html.Div(id='tabs-1-content')]),
-            dcc.Tab(label='Individual Lineups', value='tab-2', children=[dcc.Dropdown(id='dk-user-dropdown'), html.Div(id='tabs-2-content')]),
+            dcc.Tab(label='Aggregate Exposures', value='tab-1', children=[dcc.Dropdown(id='agg-lineup-user-dropdown', style={'textAlign':'left', 'width':'100%','display':'inline-block'}, multi=True), 
+                                                                          html.Div(id='tabs-1-content')]),
+            dcc.Tab(label='Individual Lineups', value='tab-2', children=[dcc.Dropdown(id='ind-lineup-user-dropdown'), 
+                                                                          html.Div(id='tabs-2-content')]),
         ])
     
     ]),
     
     # This component 'stores' the uploaded file data into the session memory so it can be passed through various callbacks
     dcc.Store(id='output-data-upload'),
-    #html.Img(src=app.get_asset_url('mlb_logos/arizona_diamondbacks.jpeg'))
-    #html.Img(src='C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logos/cincinnati_reds.jpeg')
 
 ])
 
@@ -85,8 +85,35 @@ def store_raw_data(list_of_contents, list_of_names, list_of_dates):
     else:
         pass
 
+# This is the dropdown menu on the aggregate exposures tab
+@app.callback(Output('agg-lineup-user-dropdown', 'options'),
+              Input('output-data-upload','data'))
+def update_tab1_dropdown(data):
+    # If there is no data uploaded
+    if data is None:
+        raise PreventUpdate
+    # If there is data
+    else:
+        # Convert serialized JSON stirng into dataframe
+        data = json.loads(data)
+        df = pd.DataFrame.from_dict(data, orient='columns')
 
-@app.callback(Output('dk-user-dropdown', 'options'),
+        # Clean up the raw data a bit
+        df = cleanup_mlb_lineup_data(df)
+
+        # Get every value from data.raw_entry_name into a list for the dropdown
+        # We can just grab EntryName here because this data has not been cleaned yet - it's the raw upload data
+        dk_users = df['EntryName']
+
+        return [
+                { 
+                    'label': user,
+                    'value' : user
+                } for user in dk_users
+                ]
+
+# This is the dropdown menu for DK users on the individual tab
+@app.callback(Output('ind-lineup-user-dropdown', 'options'),
               Input('output-data-upload','data'))
 def update_tab2_dropdown(data):
     # If there is no data uploaded
@@ -111,10 +138,11 @@ def update_tab2_dropdown(data):
 
 @app.callback(Output('tabs-1-content', 'children'),
               Input('tabs-example', 'value'),
-              Input('output-data-upload','data'))
-def aggregate_exposures_tab_content(tab, data):
+              Input('output-data-upload','data'),
+              Input('agg-lineup-user-dropdown','value'))
+def aggregate_exposures_tab_content(tab, data, agg_exposures_dropdown_selection):
     # Check if there is no data, if there isn't, then don't do anything
-    if data is None:
+    if (data is None) or (agg_exposures_dropdown_selection is None):
         pass
     
     # If there is data then start processing the relevant tab data
@@ -123,8 +151,12 @@ def aggregate_exposures_tab_content(tab, data):
         data = json.loads(data)
         df = pd.DataFrame.from_dict(data, orient='columns')
 
+        dk_users = ['Awesemo', 'giantsquid', 'bkreider', 'dacoltz', 'getloose', 'totoroll33', 'BigT44', 'thepickler']
+
+        dk_users = agg_exposures_dropdown_selection
+
         # Apply Aggregate Exposures processing 
-        df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0])
+        df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0], dk_users)
 
         return html.Div([
             html.H3('Aggregate DK User Exposures for current contest'),
@@ -134,7 +166,7 @@ def aggregate_exposures_tab_content(tab, data):
 @app.callback(Output('tabs-2-content', 'children'),
               Input('tabs-example', 'value'),
               Input('output-data-upload','data'),
-              Input('dk-user-dropdown','value'))
+              Input('ind-lineup-user-dropdown','value'))
 def inidividual_lineups_tab_content(tab, data, dropdown_selection):
 
     # This gives us the current value of the DK User dropdown, because we used the 'value' property as the input
