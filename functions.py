@@ -194,7 +194,7 @@ def filter_dk_users(agg_lineups_df, points_ownership_df):
     
     #for user in dk_users:
     for user in list(user_data_dict.keys()):
-        if user == dk_users[0]:
+        if user == list(user_data_dict.keys())[0]:
             agg_exposures = user_data_dict[user][['player','exposure']].round(2)
             agg_exposures.rename(columns={'exposure':user}, inplace=True)
         else:
