@@ -206,8 +206,6 @@ def filter_dk_users(agg_lineups_df, points_ownership_df):
     master_df = pd.merge(agg_exposures, points_ownership_df, on='player')
     non_user_cols = ['player','Team', 'nickname','position','points', 'ownership']
     
-    #master_df = master_df[[*non_user_cols, *master_df.columns.difference(non_user_cols)]]
-    #master_df = master_df[[*non_user_cols, *dk_users]]
     master_df = master_df[[*non_user_cols, *list(user_data_dict.keys())]]
     
     master_df = master_df.sort_values('points', ascending=False)
@@ -651,8 +649,8 @@ def parse_mlb_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_
     
     return(entry_lineup)
 
+# This is used by the individual lineup analyzer tab to add the stack info at the bottom section of the page
 def calculate_mlb_stacks(entry_lineup_df):
-
 
     # Trim the dataframe down to avoid pitchers in the count
     working_df = entry_lineup_df[~entry_lineup_df['Lineup Info'].isin(['P1','P2'])]
@@ -665,12 +663,6 @@ def calculate_mlb_stacks(entry_lineup_df):
     working_df = working_df.drop_duplicates().sort_values('Count', ascending=False)
 
     stacks_df = working_df 
-    #stacks_series = working_df.groupby('Team')['Team'].count()
-    #stacks_df = pd.DataFrame(stacks_series).transpose()
-    #stacks_df.reset_index(drop=True, inplace=True)
-
-    # We are going to return a list of triples as the output, that way its easy to iterate and unpack into the HTML 
-    #stacks_output = (working_df['logo_path'], working_df['Team'], working_df['Count'])
 
     return(stacks_df)
 
@@ -700,13 +692,12 @@ def convert_stacks_to_html(app, stacks_df):
         
         return(html_block)
     
+    # Empty list that will hold all the div elements later on
     stacks_html_blocks = []
 
     # General idea here is we loop through each element of the triple and apply the HTML template structure to each element
     for index, row in stacks_df.iterrows():
-
+        # Create a list of the various div tags for each team_stack
         stacks_html_blocks.append(create_stack_html_row(row))
-
-    #import ipdb; ipdb.set_trace()
 
     return(stacks_html_blocks)

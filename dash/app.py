@@ -152,9 +152,8 @@ def inidividual_lineups_tab_content(tab, data, dropdown_selection):
         # Create the points ownership df to pass through parse_mlb_lineup()
         points_ownership_df = create_points_own_df(df)
 
+        # Clean up the raw output a little bit
         df = cleanup_mlb_lineup_data(df)
-
-
 
         # Filter the individual lineup down based on dropdown menu user input
         df = parse_mlb_lineup(df, points_ownership_df, player_team_pos_df, dk_user)
@@ -162,41 +161,6 @@ def inidividual_lineups_tab_content(tab, data, dropdown_selection):
         # Get stack data
         stacks_df = calculate_mlb_stacks(df)
         
-        #test_output = (stacks_triple[0].iloc[0], stacks_triple[1].iloc[0], stacks_triple[2].iloc[0])
-
-        #html_output = html.Div([
-        #                        html.Div([
-        #                        # Team logo
-        #                        html.Div(
-        #                            html.Img(src=app.get_asset_url('mlb_logos/' + os.path.basename(stacks_triple[0].iloc[0]))), 
-        #                            style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
-        #                        # Team name 
-        #                        html.Div(
-        #                            html.H3(test_output[1]),
-        #                            style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
-        #                        # Stack count
-        #                        html.Div(
-        #                            html.H3(test_output[2]),
-        #                            style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
-        #                        ]),
-        #                        html.Div([
-        #                        # Team logo
-        #                        html.Div(
-        #                            html.Img(src=app.get_asset_url('mlb_logos/' + os.path.basename(stacks_triple[0].iloc[1]))), 
-        #                            style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
-        #                        # Team name 
-        #                        html.Div(
-        #                            html.H3(stacks_triple[1].iloc[1]),
-        #                            style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
-        #                        # Stack count
-        #                        html.Div(
-        #                            html.H3(stacks_triple[2].iloc[1]),
-        #                            style={'textAlign':'center', 'width':'15%','display':'inline-block'}),
-        #                        ])
-        #        ])
-
-
-
         return html.Div([
             html.H3('Individual Lineup Analyzer for current contest'),
             # Convert the processed data into an HTML table for output
