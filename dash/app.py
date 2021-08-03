@@ -24,7 +24,7 @@ import pandas as pd
 import sys
 
 sys.path.insert(0, '..')
-from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup, create_points_own_df, calculate_mlb_stacks, convert_stacks_to_html
+from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup, create_points_own_df, calculate_mlb_stacks, convert_stacks_to_html, summarize_lineup_stacks
 mlb_team_colors = {'ARI':'red','ATL':'blue','BAL':'orange','BOS':'red','CHC':'blue','CHW':'black','CIN':'red','CLE':'blue','COL':'purple','DET':'blue','HOU':'orange','KCR':'blue','LAA':'red','LAD':'blue','MIA':'orange','MIL':'blue','MIN':'blue','NYM':'orange','NYY':'blue','OAK':'green','PHI':'red','PIT':'yellow','SDP':'yellow','SFG':'orange','SEA':'black','STL':'red','TBR':'blue','TEX':'red','TOR':'blue','WAS':'red'}
 player_team_pos_df = pd.read_csv('assets/mlb_players_pos_teams_data.csv') 
 
@@ -60,6 +60,7 @@ app.layout = html.Div([
                                                                           html.Div(id='tabs-1-content')]),
             dcc.Tab(label='Individual Lineups', value='tab-2', children=[dcc.Dropdown(id='ind-lineup-user-dropdown'), 
                                                                           html.Div(id='tabs-2-content')]),
+            dcc.Tab(label='Stacks Calculator', value='tab-3', children=[html.Div(id='tabs-3-content')])                                                                          
         ])
     
     ]),
@@ -168,7 +169,7 @@ def aggregate_exposures_tab_content(tab, data, agg_exposures_dropdown_selection)
               Input('tabs-example', 'value'),
               Input('output-data-upload','data'),
               Input('ind-lineup-user-dropdown','value'))
-def inidividual_lineups_tab_content(tab, data, dropdown_selection):
+def individual_lineups_tab_content(tab, data, dropdown_selection):
 
     # This gives us the current value of the DK User dropdown, because we used the 'value' property as the input
     dk_user = dropdown_selection
@@ -195,16 +196,36 @@ def inidividual_lineups_tab_content(tab, data, dropdown_selection):
         stacks_df = calculate_mlb_stacks(df)
         
         return html.Div([
-            html.H3('Individual Lineup Analyzer for current contest'),
+            html.H3('Individual Lineup Analyzer'),
             # Convert the processed data into an HTML table for output
             convert_df_to_html(df),
-            #convert_df_to_html(stacks_df),
-            
             html.Div(children=convert_stacks_to_html(app, stacks_df))
-            #html_output
-
-            #html.H3(stacks_df)
         ])
+
+@app.callback(Output('tabs-3-content', 'children'),
+              Input('tabs-example', 'value'),
+              Input('output-data-upload','data'))
+def stack_calculator_tab_content(tab, data):
+
+    # Check for data upload
+    if (data is None):
+        pass
+    # If data is uploaded
+    else:
+        data = json.loads(data)
+        df = pd.DataFrame.from_dict(data, orient='columns')
+
+        # Create the points ownership df to pass through parse_mlb_lineup()
+        points_ownership_df = create_points_own_df(df)
+        
+        # Process data
+        df = summarize_lineup_stacks(df, points_ownership_df, player_team_pos_df)
+
+        return html.Div([
+            html.H3('Stack Calculator'),
+            convert_df_to_html(df)
+        ])
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)

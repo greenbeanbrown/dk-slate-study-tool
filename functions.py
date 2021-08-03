@@ -707,3 +707,48 @@ def convert_stacks_to_html(app, stacks_df):
         stacks_html_blocks.append(create_stack_html_row(row))
 
     return(stacks_html_blocks)
+
+# This is used by the Stacks Calculator to convert raw lineup data into a digestable table of aggregate MLB stacks
+def summarize_lineup_stacks(raw_dk_contest_data, points_ownership_df, player_team_pos_df):
+    
+    # Cleanup mlb lineup data
+    lineups_df = cleanup_mlb_lineup_data(raw_dk_contest_data)
+    
+    # Parse mlb lineup
+    list_of_all_lineup_dfs = [parse_mlb_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_name) for entry_name in lineups_df.EntryName]
+    
+    # Calculate stacks
+    list_of_all_lineup_stacks = [calculate_mlb_stacks(lineup_df) for lineup_df in list_of_all_lineup_dfs]
+    
+    def convert_stack_to_string(mlb_stacks_df):
+        return(str('-'.join(str(int(x)) for x in mlb_stacks_df['Count'])))
+    
+    def convert_teams_to_string(mlb_stacks_df):
+        return(str('-'.join(str(x) for x in mlb_stacks_df['Team'])))
+    
+    # This function adds trailing zeros to relevant series of data related to stacks, due to blank entries
+    # Main purpose of this is to allow for a clean dataframe to be constructed
+    def add_zeros_for_blank_entries(raw_dk_contest_data, data_list):
+        # Assess how far off the lengths are
+        length_needed = len(raw_dk_contest_data)
+        series_length = len(data_list)
+        # Determine how many zeros need to be added
+        num_zeros_to_add = length_needed - series_length
+        # Add the zeros to the end of the list
+        new_data_list = np.concatenate([data_list, np.zeros(num_zeros_to_add)])
+        return(new_data_list)
+    
+    # Convert the stack count to a single string, delimited by dashes
+    stack_strings = [convert_stack_to_string(mlb_stack_df) for mlb_stack_df in list_of_all_lineup_stacks]
+    team_strings = [convert_teams_to_string(mlb_stack_df) for mlb_stack_df in list_of_all_lineup_stacks]
+    
+
+    # Return a dataframe with all this stuff for output
+    agg_stacks_df = pd.DataFrame({'DK User':raw_dk_contest_data['EntryName'], 
+                                  'Points':raw_dk_contest_data['Points'], 
+                                  'P1':add_zeros_for_blank_entries(raw_dk_contest_data, lineups_df['P1']), 
+                                  'P2':add_zeros_for_blank_entries(raw_dk_contest_data, lineups_df['P2']),
+                                  'Teams Stacked':add_zeros_for_blank_entries(raw_dk_contest_data, team_strings), 
+                                  'Stack Type':add_zeros_for_blank_entries(raw_dk_contest_data, stack_strings)})
+    
+    return(agg_stacks_df)
