@@ -37,7 +37,7 @@ app.layout = html.Div([
         id='upload-data',
         children=html.Div([
             'Drag and Drop or ',
-            html.A('Select Files')
+            html.A('Select DraftKings Contest CSV')
         ]),
         style={
             'width': '100%',
@@ -103,7 +103,7 @@ def update_tab1_dropdown(data):
 
         # Get every value from data.raw_entry_name into a list for the dropdown
         # We can just grab EntryName here because this data has not been cleaned yet - it's the raw upload data
-        dk_users = df['EntryName']
+        dk_users = df['EntryName'].dropna()
 
         return [
                 { 
@@ -119,6 +119,7 @@ def update_tab2_dropdown(data):
     # If there is no data uploaded
     if data is None:
         raise PreventUpdate
+
     # If there is data
     else:
         # Convert serialized JSON stirng into dataframe
@@ -127,7 +128,7 @@ def update_tab2_dropdown(data):
 
         # Get every value from data.raw_entry_name into a list for the dropdown
         # We can just grab EntryName here because this data has not been cleaned yet - it's the raw upload data
-        dk_users = df['EntryName']
+        dk_users = df['EntryName'].dropna()
 
         return [
                 { 
@@ -151,7 +152,7 @@ def aggregate_exposures_tab_content(tab, data, agg_exposures_dropdown_selection)
         data = json.loads(data)
         df = pd.DataFrame.from_dict(data, orient='columns')
 
-        dk_users = ['Awesemo', 'giantsquid', 'bkreider', 'dacoltz', 'getloose', 'totoroll33', 'BigT44', 'thepickler']
+        #dk_users = ['Awesemo', 'giantsquid', 'bkreider', 'dacoltz', 'getloose', 'totoroll33', 'BigT44', 'thepickler']
 
         dk_users = agg_exposures_dropdown_selection
 

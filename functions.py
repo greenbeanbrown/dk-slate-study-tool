@@ -617,8 +617,8 @@ def parse_mlb_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_
     entry_lineup['Lineup Name'] = entry_lineup['raw_entry_name']
     
     # Final columns and order
-    output_cols = ['Rank', 'Points', 'Lineup Name', 'P1','P2','C','1B','2B','3B','SS','OF1','OF2','OF3']
-    non_player_cols = ['Rank','Points','Lineup Name']
+    output_cols = ['EntryId','Rank', 'Points', 'Lineup Name', 'P1','P2','C','1B','2B','3B','SS','OF1','OF2','OF3']
+    non_player_cols = ['EntryId','Rank','Points','Lineup Name']
     entry_lineup = entry_lineup[output_cols]
 
     # Transpose the dataframe for readability
@@ -650,6 +650,7 @@ def parse_mlb_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_
     return(entry_lineup)
 
 # This is used by the individual lineup analyzer tab to add the stack info at the bottom section of the page
+# The expectation is that the input for this function is the output from parse_mlb_lineup()
 def calculate_mlb_stacks(entry_lineup_df):
 
     # Trim the dataframe down to avoid pitchers in the count
@@ -658,7 +659,12 @@ def calculate_mlb_stacks(entry_lineup_df):
 
     working_df = merge_team_logos(working_df)
     working_df['Count'] = working_df.groupby('Team')['Team'].transform('count')
-    working_df = working_df[['logo_path','Team','Count']].dropna()
+
+    # Add the EntryId as a column for merging in later use - this is the first field of the Data column
+    # This is hardcoded for now basically because it's a strange shaped dataframe at this point in time
+    working_df['EntryId'] = working_df.loc[0, 'Data']
+    # Filter down columns
+    working_df = working_df[['EntryId','logo_path','Team','Count']].dropna()
 
     working_df = working_df.drop_duplicates().sort_values('Count', ascending=False)
 
