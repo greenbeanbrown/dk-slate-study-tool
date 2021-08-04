@@ -24,7 +24,7 @@ import pandas as pd
 import sys
 
 sys.path.insert(0, '..')
-from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup, create_points_own_df, calculate_mlb_stacks, convert_stacks_to_html, summarize_lineup_stacks
+from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup, create_points_own_df, calculate_mlb_stacks, convert_stacks_to_html, summarize_lineup_stacks, clean_entry_name
 mlb_team_colors = {'ARI':'red','ATL':'blue','BAL':'orange','BOS':'red','CHC':'blue','CHW':'black','CIN':'red','CLE':'blue','COL':'purple','DET':'blue','HOU':'orange','KCR':'blue','LAA':'red','LAD':'blue','MIA':'orange','MIL':'blue','MIN':'blue','NYM':'orange','NYY':'blue','OAK':'green','PHI':'red','PIT':'yellow','SDP':'yellow','SFG':'orange','SEA':'black','STL':'red','TBR':'blue','TEX':'red','TOR':'blue','WAS':'red'}
 player_team_pos_df = pd.read_csv('assets/mlb_players_pos_teams_data.csv') 
 
@@ -60,7 +60,8 @@ app.layout = html.Div([
                                                                           html.Div(id='tabs-1-content')]),
             dcc.Tab(label='Individual Lineups', value='tab-2', children=[dcc.Dropdown(id='ind-lineup-user-dropdown'), 
                                                                           html.Div(id='tabs-2-content')]),
-            dcc.Tab(label='Stacks Calculator', value='tab-3', children=[html.Div(id='tabs-3-content')])                                                                          
+            dcc.Tab(label='Stacks Calculator', value='tab-3', children=[dcc.Dropdown(id='stacks-calc-user-dropdown', multi=True),
+                                                                          html.Div(id='tabs-3-content')])                                                                          
         ])
     
     ]),
@@ -104,7 +105,7 @@ def update_tab1_dropdown(data):
 
         # Get every value from data.raw_entry_name into a list for the dropdown
         # We can just grab EntryName here because this data has not been cleaned yet - it's the raw upload data
-        dk_users = df['EntryName'].dropna()
+        dk_users = pd.Series(df['EntryName'].dropna()).drop_duplicates()
 
         return [
                 { 
@@ -129,7 +130,34 @@ def update_tab2_dropdown(data):
 
         # Get every value from data.raw_entry_name into a list for the dropdown
         # We can just grab EntryName here because this data has not been cleaned yet - it's the raw upload data
-        dk_users = df['EntryName'].dropna()
+        dk_users = pd.Series(df['EntryName'].dropna()).drop_duplicates()
+
+        return [
+                { 
+                    'label': user,
+                    'value' : user
+                } for user in dk_users
+                ]
+
+# This is the dropdown menu for DK users on the individual tab
+@app.callback(Output('stacks-calc-user-dropdown', 'options'),
+              Input('output-data-upload','data'))
+def update_tab3_dropdown(data):
+    # If there is no data uploaded
+    if data is None:
+        raise PreventUpdate
+
+    # If there is data
+    else:
+        # Convert serialized JSON stirng into dataframe
+        data = json.loads(data)
+        df = pd.DataFrame.from_dict(data, orient='columns')
+
+        # Get every value from data.raw_entry_name into a list for the dropdown
+        # We can just grab EntryName here because this data has not been cleaned yet - it's the raw upload data
+        #dk_users = df['EntryName'].dropna()
+
+        dk_users = pd.Series([clean_entry_name(entry_name) for entry_name in df['EntryName'].dropna()]).drop_duplicates()
 
         return [
                 { 
@@ -204,8 +232,9 @@ def individual_lineups_tab_content(tab, data, dropdown_selection):
 
 @app.callback(Output('tabs-3-content', 'children'),
               Input('tabs-example', 'value'),
-              Input('output-data-upload','data'))
-def stack_calculator_tab_content(tab, data):
+              Input('output-data-upload','data'),
+              Input('stacks-calc-user-dropdown','value'))
+def stack_calculator_tab_content(tab, data, dropdown_selection):
 
     # Check for data upload
     if (data is None):
@@ -218,8 +247,12 @@ def stack_calculator_tab_content(tab, data):
         # Create the points ownership df to pass through parse_mlb_lineup()
         points_ownership_df = create_points_own_df(df)
         
-        # Process data
-        df = summarize_lineup_stacks(df, points_ownership_df, player_team_pos_df)
+        # If the dropdown is empty, then show all entries stack info
+        if dropdown_selection is None:
+            # Process data 
+            df = summarize_lineup_stacks(df, points_ownership_df, player_team_pos_df)
+        else:
+            df = summarize_lineup_stacks(df, points_ownership_df, player_team_pos_df, dropdown_selection)
 
         return html.Div([
             html.H3('Stack Calculator'),
