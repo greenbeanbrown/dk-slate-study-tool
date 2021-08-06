@@ -715,7 +715,7 @@ def summarize_lineup_stacks(raw_dk_contest_data, points_ownership_df, player_tea
     lineups_df = cleanup_mlb_lineup_data(raw_dk_contest_data)
 
     # If there is no optional user parameter passed, then don't filter the dataframe
-    if len(list(*args)) is 0:
+    if len(list(*args)) == 0:
         pass
     # if there is a parameter passed then filter the df with only those users
     else:
@@ -750,7 +750,7 @@ def summarize_lineup_stacks(raw_dk_contest_data, points_ownership_df, player_tea
     team_strings = [convert_teams_to_string(mlb_stack_df) for mlb_stack_df in list_of_all_lineup_stacks]
 
     # If there is no optional user parameter passed, then don't filter the dataframe
-    if len(list(*args)) is 0:
+    if len(list(*args)) == 0:
         # Return a dataframe with all this stuff for output
         agg_stacks_df = pd.DataFrame({'DK User':raw_dk_contest_data['EntryName'], 
                                       'Points':raw_dk_contest_data['Points'], 
