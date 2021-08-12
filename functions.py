@@ -16,6 +16,9 @@ import io
 
 import json
 
+import colorlover
+
+
 def prep_raw_dk_contest_data(raw_dk_contest_data, sport):
 
     # Take in 1 raw dataframe as an input
@@ -36,8 +39,6 @@ def prep_raw_dk_contest_data(raw_dk_contest_data, sport):
     # Merge player team and position data for reference (should always be in same dir)
     #player_team_pos_df = pd.read_csv('C:/Users/Sean/Documents/python/dk_slate_study_tool/data/mlb_players_pos_teams_data.csv') 
     player_team_pos_df = pd.read_csv('assets/mlb_players_pos_teams_data.csv') 
-
-
 
     # Fuzzy match the player names to the lookup df with every player
     player_team_pos_df['player'] = [match_name(player_name, points_ownership_df['player'])[0] for player_name in player_team_pos_df['Player']]
@@ -279,8 +280,10 @@ def handle_outlier_names(df):
 def merge_team_logos(players_teams_df):
 
     # Base dir - might need to make this dynamic in the future
-    file_path = 'C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logo_lookup.csv'
+    #file_path = 'C:/Users/Sean/Documents/python/dk_slate_study_tool/dash/assets/mlb_logo_lookup.csv'
+    file_path = 'assets/mlb_logo_lookup.csv'
     
+
     # Read in the lookup table 
     team_logo_lookup_df = pd.read_csv(file_path)
 
@@ -586,24 +589,45 @@ def parse_uploaded_data(contents, filename, date):
     return(df)   
 
 # This takes in a file upload from the UI and returns an HTML table (of sorts..) of the data
-def convert_df_to_html(df):
+def convert_df_to_html(df, style='team_colors'):
 
     #df = pd.read_json(json_serialized_df)
 
-    return html.Div([
 
-        dash_table.DataTable(
-            data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in df.columns],
-            sort_action="native",
-            filter_action='native',
-            style_data_conditional = (
-                get_team_colors()
-            )
-        ),
 
-        html.Hr(),  # horizontal line
-    ])        
+    if style == 'team_colors':
+        return html.Div([
+
+            dash_table.DataTable(
+                data=df.to_dict('records'),
+                columns=[{'name': i, 'id': i} for i in df.columns],
+                sort_action="native",
+                filter_action='native',
+                style_data_conditional = (
+                    get_team_colors()
+                )
+            ),
+
+            html.Hr(),  # horizontal line
+        ])       
+         
+    else:
+        # Conditional Formatting for players exposures
+        (styles, legend) = discrete_background_color_bins(df)
+
+        return html.Div([
+
+            dash_table.DataTable(
+                data=df.to_dict('records'),
+                columns=[{'name': i, 'id': i} for i in df.columns],
+                sort_action="native",
+                filter_action='native',
+                style_data_conditional=styles
+            ),
+
+            html.Hr(),  # horizontal line
+        ])               
+
 
 
 # Used by the Individual Lineup Analyzer to filter the data by user
@@ -770,3 +794,72 @@ def summarize_lineup_stacks(raw_dk_contest_data, points_ownership_df, player_tea
 
 
     return(agg_stacks_df)
+
+
+
+def discrete_background_color_bins(df, n_bins=10, columns='all'):
+
+    bounds = [i * (1.0 / n_bins) for i in range(n_bins + 1)]
+
+    # Add formatting to all numeric columns - not really using this
+    if columns == 'all':
+        if 'id' in df:
+            df_numeric_columns = df.select_dtypes('number').drop(['id'], axis=1)
+        else:
+            df_numeric_columns = df.select_dtypes('number')
+    
+    # Only apply the conditional formatting to the player exposures 
+    elif columns == 'exposures':
+        # Define what columns we want to add the conditional formatting to
+        df_numeric_columns = df[df.columns.difference(['player','points','nickname','ownership'])]
+
+    # Otherwise, still apply to all columns - again, not really using this
+    else:
+        df_numeric_columns = df[columns]
+
+    df_max = df_numeric_columns.max().max()
+    df_min = df_numeric_columns.min().min()
+
+    ranges = [
+        ((df_max - df_min) * i) + df_min
+        for i in bounds
+    ]
+
+    styles = []
+    legend = []
+    for i in range(1, len(bounds)):
+        min_bound = ranges[i - 1]
+        max_bound = ranges[i]
+        #backgroundColor = colorlover.scales[str(n_bins)]['seq']['Blues'][i - 1]
+        # This defines what color palette/gradient to use
+        backgroundColor = colorlover.scales[str(n_bins)]['div']['RdYlGn'][i - 1]
+        color = 'white' if i > len(bounds) / 2. else 'inherit'
+
+        #import ipdb; ipdb.set_trace()
+
+        for column in df_numeric_columns:
+            styles.append({
+                'if': {
+                    'filter_query': (
+                        '{{{column}}} >= {min_bound}' +
+                        (' && {{{column}}} < {max_bound}' if (i < len(bounds) - 1) else '')
+                    ).format(column=column, min_bound=min_bound, max_bound=max_bound),
+                    'column_id': column
+                },
+                'backgroundColor': backgroundColor,
+                'color': color
+            })
+        legend.append(
+            html.Div(style={'display': 'inline-block', 'width': '60px'}, children=[
+                html.Div(
+                    style={
+                        'backgroundColor': backgroundColor,
+                        'borderLeft': '1px rgb(50, 50, 50) solid',
+                        'height': '10px'
+                    }
+                ),
+                html.Small(round(min_bound, 2), style={'paddingLeft': '2px'})
+            ])
+        )
+
+    return (styles, html.Div(legend, style={'padding': '5px 0 5px 0'}))

@@ -24,7 +24,8 @@ import pandas as pd
 import sys
 
 sys.path.insert(0, '..')
-from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup, create_points_own_df, calculate_mlb_stacks, convert_stacks_to_html, summarize_lineup_stacks, clean_entry_name
+from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup, create_points_own_df, calculate_mlb_stacks, convert_stacks_to_html, summarize_lineup_stacks, clean_entry_name, discrete_background_color_bins
+
 mlb_team_colors = {'ARI':'red','ATL':'blue','BAL':'orange','BOS':'red','CHC':'blue','CHW':'black','CIN':'red','CLE':'blue','COL':'purple','DET':'blue','HOU':'orange','KCR':'blue','LAA':'red','LAD':'blue','MIA':'orange','MIL':'blue','MIN':'blue','NYM':'orange','NYY':'blue','OAK':'green','PHI':'red','PIT':'yellow','SDP':'yellow','SFG':'orange','SEA':'black','STL':'red','TBR':'blue','TEX':'red','TOR':'blue','WAS':'red'}
 player_team_pos_df = pd.read_csv('assets/mlb_players_pos_teams_data.csv') 
 
@@ -172,25 +173,35 @@ def update_tab3_dropdown(data):
               Input('agg-lineup-user-dropdown','value'))
 def aggregate_exposures_tab_content(tab, data, agg_exposures_dropdown_selection):
     # Check if there is no data, if there isn't, then don't do anything
-    if (data is None) or (agg_exposures_dropdown_selection is None):
+    if (data is None):
         pass
     
     # If there is data then start processing the relevant tab data
     else:
+
         # Prep the dataframe before calling our processing function 
         data = json.loads(data)
-        df = pd.DataFrame.from_dict(data, orient='columns')
+        df = pd.DataFrame.from_dict(data, orient='columns')        
 
-        #dk_users = ['Awesemo', 'giantsquid', 'bkreider', 'dacoltz', 'getloose', 'totoroll33', 'BigT44', 'thepickler']
+        #import ipdb; ipdb.set_trace()
 
-        dk_users = agg_exposures_dropdown_selection
+        # Show the aggregate data if there are no users selected in the dropdown 
+        if (agg_exposures_dropdown_selection is None):
+            df = prep_raw_dk_contest_data(df, 'MLB')[0][['player','nickname','position','points','ownership']]
+        # If there are users in the dropdown selection, then filter based on those users
+        else:
+            #dk_users = ['Awesemo', 'giantsquid', 'bkreider', 'dacoltz', 'getloose', 'totoroll33', 'BigT44', 'thepickler']
+            dk_users = agg_exposures_dropdown_selection
 
-        # Apply Aggregate Exposures processing 
-        df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0], dk_users)
+            # Apply Aggregate Exposures processing 
+            df = filter_dk_users(prep_raw_dk_contest_data(df, 'MLB')[1], prep_raw_dk_contest_data(df, 'MLB')[0], dk_users)
+
+            # Conditional Formatting for players exposures
+            #(styles, legend) = discrete_background_color_bins(df)
 
         return html.Div([
             html.H3('Aggregate DK User Exposures for current contest'),
-            convert_df_to_html(df)
+            convert_df_to_html(df, style='conditional')
         ])
 
 @app.callback(Output('tabs-2-content', 'children'),
