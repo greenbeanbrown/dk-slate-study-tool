@@ -27,7 +27,9 @@ sys.path.insert(0, '..')
 from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup, create_points_own_df, calculate_mlb_stacks, convert_stacks_to_html, summarize_lineup_stacks, clean_entry_name, discrete_background_color_bins
 
 mlb_team_colors = {'ARI':'red','ATL':'blue','BAL':'orange','BOS':'red','CHC':'blue','CHW':'black','CIN':'red','CLE':'blue','COL':'purple','DET':'blue','HOU':'orange','KCR':'blue','LAA':'red','LAD':'blue','MIA':'orange','MIL':'blue','MIN':'blue','NYM':'orange','NYY':'blue','OAK':'green','PHI':'red','PIT':'yellow','SDP':'yellow','SFG':'orange','SEA':'black','STL':'red','TBR':'blue','TEX':'red','TOR':'blue','WAS':'red'}
-player_team_pos_df = pd.read_csv('assets/mlb_players_pos_teams_data.csv') 
+
+# Define some global variables/data
+PLAYER_TEAM_POS_DF = pd.read_csv('assets/mlb_players_pos_teams_data.csv') 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -120,7 +122,7 @@ def update_tab1_dropdown(data):
 # This is the dropdown menu for DK users on the individual tab
 @app.callback(Output('ind-lineup-user-dropdown', 'options'),
               Input('output-data-upload','data'))
-def update_tab2_dropdown(data):
+def update_individual_lineup_dropdown(data):
     # If there is no data uploaded
     if data is None:
         raise PreventUpdate
@@ -145,7 +147,7 @@ def update_tab2_dropdown(data):
 # This is the dropdown menu for DK users on the individual tab
 @app.callback(Output('stacks-calc-user-dropdown', 'options'),
               Input('output-data-upload','data'))
-def update_tab3_dropdown(data):
+def update_stacks_calc_dropdown(data):
     # If there is no data uploaded
     if data is None:
         raise PreventUpdate
@@ -179,7 +181,32 @@ def contest_summary_content(tab, data):
         pass
     
     else:
-        return(html.Div([html.H3('Display Stack Distributions and such here')]))
+        # Read data and convert 
+        data = json.loads(data)
+        df = pd.DataFrame.from_dict(data, orient='columns')
+
+        # Create the points ownership df to pass through parse_mlb_lineup()
+        # NOTE: this should really be moved outside of the callback functions, only needs to be loaded 1 time
+        points_ownership_df = create_points_own_df(df)
+
+        # Goal of this is to show descriptive summary info of the contest, a "snapshot" if you will
+
+        # First thing to present is the distribution of stack-types present in the contest (e.g. How many 5-2-1 stacks were there? 5-3? so on..)
+        df = summarize_lineup_stacks(df, points_ownership_df, PLAYER_TEAM_POS_DF)
+        # Get the frequency count of each stack type
+        stack_frequency_df = pd.DataFrame({'Stack Type': df['Stack Type'].value_counts().index,
+                                           'Count': df['Stack Type'].value_counts()})
+
+        # Second thing to do is plot this as a pie chart 
+
+
+        # Third thing to do is present the distribution of team stacks
+
+        return html.Div([
+            html.H3('Display Stack Distributions and such here'),
+            convert_df_to_html(stack_frequency_df)
+        ])
+
 
 @app.callback(Output('agg-exposures-tab-content', 'children'),
               Input('tabs-example', 'value'),
@@ -243,7 +270,7 @@ def individual_lineups_tab_content(tab, data, dropdown_selection):
         df = cleanup_mlb_lineup_data(df)
 
         # Filter the individual lineup down based on dropdown menu user input
-        df = parse_mlb_lineup(df, points_ownership_df, player_team_pos_df, dk_user)
+        df = parse_mlb_lineup(df, points_ownership_df, PLAYER_TEAM_POS_DF, dk_user)
 
         # Get stack data
         stacks_df = calculate_mlb_stacks(df)
@@ -275,9 +302,9 @@ def stack_calculator_tab_content(tab, data, dropdown_selection):
         # If the dropdown is empty, then show all entries stack info
         if dropdown_selection is None:
             # Process data 
-            df = summarize_lineup_stacks(df, points_ownership_df, player_team_pos_df)
+            df = summarize_lineup_stacks(df, points_ownership_df, PLAYER_TEAM_POS_DF)
         else:
-            df = summarize_lineup_stacks(df, points_ownership_df, player_team_pos_df, dropdown_selection)
+            df = summarize_lineup_stacks(df, points_ownership_df, PLAYER_TEAM_POS_DF, dropdown_selection)
 
         return html.Div([
             html.H3('Stack Calculator'),
