@@ -773,25 +773,24 @@ def summarize_lineup_stacks(raw_dk_contest_data, points_ownership_df, player_tea
     stack_strings = [convert_stack_to_string(mlb_stack_df) for mlb_stack_df in list_of_all_lineup_stacks]
     team_strings = [convert_teams_to_string(mlb_stack_df) for mlb_stack_df in list_of_all_lineup_stacks]
 
-    # If there is no optional user parameter passed, then don't filter the dataframe
-    if len(list(*args)) == 0:
-        # Return a dataframe with all this stuff for output
-        agg_stacks_df = pd.DataFrame({'DK User':raw_dk_contest_data['EntryName'], 
-                                      'Points':raw_dk_contest_data['Points'], 
-                                      'P1':add_zeros_for_blank_entries(raw_dk_contest_data, lineups_df['P1']), 
-                                      'P2':add_zeros_for_blank_entries(raw_dk_contest_data, lineups_df['P2']),
-                                      'Teams Stacked':add_zeros_for_blank_entries(raw_dk_contest_data, team_strings), 
-                                      'Stack Type':add_zeros_for_blank_entries(raw_dk_contest_data, stack_strings)})
-    # Otherwise filter it down
-    else:
-        # Return a dataframe with all this stuff for output
-        agg_stacks_df = pd.DataFrame({'DK User':lineups_df['EntryName'], 
-                                      'Points':lineups_df['Points'], 
-                                      'P1':add_zeros_for_blank_entries(lineups_df, lineups_df['P1']), 
-                                      'P2':add_zeros_for_blank_entries(lineups_df, lineups_df['P2']),
-                                      'Teams Stacked':add_zeros_for_blank_entries(lineups_df, team_strings), 
-                                      'Stack Type':add_zeros_for_blank_entries(lineups_df, stack_strings)})
+    #    # Return a dataframe with all this stuff for output
+    #    agg_stacks_df = pd.DataFrame({'DK User':raw_dk_contest_data['EntryName'], 
+    #                                  'Points':raw_dk_contest_data['Points'], 
+    #                                  'P1':add_zeros_for_blank_entries(raw_dk_contest_data, lineups_df['P1']), 
+    #                                  'P2':add_zeros_for_blank_entries(raw_dk_contest_data, lineups_df['P2']),
+    #                                  'Teams Stacked':add_zeros_for_blank_entries(raw_dk_contest_data, team_strings), 
+    #                                  'Stack Type':add_zeros_for_blank_entries(raw_dk_contest_data, stack_strings)})
 
+    
+    # Return a dataframe with all this stuff for output
+    agg_stacks_df = pd.DataFrame({'DK User':lineups_df['EntryName'], 
+                                  'Points':lineups_df['Points'], 
+                                  'P1':lineups_df['P1'], 
+                                  'P2':lineups_df['P2'],
+                                  'Teams Stacked':team_strings, 
+                                  'Stack Type':stack_strings})    
+
+    
 
     return(agg_stacks_df)
 
