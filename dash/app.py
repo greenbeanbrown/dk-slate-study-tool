@@ -56,12 +56,13 @@ app.layout = html.Div([
 
     # Tabs
     html.Div([
-            dcc.Tabs(id='tabs-example', value='tab-1', children=[
-            dcc.Tab(label='Aggregate Exposures', value='tab-1', children=[dcc.Dropdown(id='agg-lineup-user-dropdown', style={'textAlign':'left', 'width':'100%','display':'inline-block'}, multi=True), 
+            dcc.Tabs(id='tabs-example', children=[
+                
+                dcc.Tab(label='Aggregate Exposures', value='agg-exposures-tab', children=[dcc.Dropdown(id='agg-lineup-user-dropdown', style={'textAlign':'left', 'width':'100%','display':'inline-block'}, multi=True), 
                                                                           html.Div(id='tabs-1-content')]),
-            dcc.Tab(label='Individual Lineups', value='tab-2', children=[dcc.Dropdown(id='ind-lineup-user-dropdown'), 
+                dcc.Tab(label='Individual Lineups', value='ind-lineups-tab', children=[dcc.Dropdown(id='ind-lineup-user-dropdown'), 
                                                                           html.Div(id='tabs-2-content')]),
-            dcc.Tab(label='Stacks Calculator', value='tab-3', children=[dcc.Dropdown(id='stacks-calc-user-dropdown', multi=True),
+                dcc.Tab(label='Stacks Calculator', value='stack-calc-tab', children=[dcc.Dropdown(id='stacks-calc-user-dropdown', multi=True),
                                                                           html.Div(id='tabs-3-content')])                                                                          
         ])
     
