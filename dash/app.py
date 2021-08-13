@@ -23,6 +23,9 @@ import pandas as pd
 
 import sys
 
+import plotly.express as px
+import plotly.graph_objs as go
+
 sys.path.insert(0, '..')
 from functions import cleanup_mlb_lineup_data, cleanup_mma_lineup_data, prep_raw_dk_contest_data, filter_dk_users, merge_team_logos,  parse_uploaded_data, convert_df_to_html, parse_mlb_lineup, create_points_own_df, calculate_mlb_stacks, convert_stacks_to_html, summarize_lineup_stacks, clean_entry_name, discrete_background_color_bins
 
@@ -59,7 +62,12 @@ app.layout = html.Div([
     # Tabs
     html.Div([
             dcc.Tabs(id='tabs-example', value='summary-tab', children=[
-                dcc.Tab(label='Contest Summary', value='summary-tab', children=[html.Div(id='summary-tab-content')]),
+                dcc.Tab(label='Contest Summary', value='summary-tab', children=[
+                                                                                html.Div([
+                                                                                    html.Div(id='summary-tab-content'),
+                                                                                    dcc.Graph(id='stacks-pie-chart')
+                                                                                    ])
+                                                                                ]),
 
                 dcc.Tab(label='Aggregate Exposures', value='agg-exposures-tab', children=[dcc.Dropdown(id='agg-lineup-user-dropdown', style={'textAlign':'left', 'width':'100%','display':'inline-block'}, multi=True), 
                                                                           html.Div(id='agg-exposures-tab-content')]),
@@ -172,13 +180,14 @@ def update_stacks_calc_dropdown(data):
                 ]
 
 
-@app.callback(Output('summary-tab-content', 'children'),
+@app.callback([Output('summary-tab-content', 'children'),
+              Output('stacks-pie-chart', 'figure')],
               Input('tabs-example', 'value'),
               Input('output-data-upload','data'))
 def contest_summary_content(tab, data):
     # Check if there is no data, if there isn't, then don't do anything
     if (data is None):
-        pass
+        raise PreventUpdate
     
     else:
         # Read data and convert 
@@ -198,14 +207,21 @@ def contest_summary_content(tab, data):
                                            'Count': df['Stack Type'].value_counts()})
 
         # Second thing to do is plot this as a pie chart 
-
+        fig = px.pie(stack_frequency_df, values='Count', names='Stack Type', title='Stack Frequencies')
 
         # Third thing to do is present the distribution of team stacks
-
-        return html.Div([
+        
+        return [
+            # DataTable output
+            html.Div([
             html.H3('Display Stack Distributions and such here'),
-            convert_df_to_html(stack_frequency_df)
-        ])
+            convert_df_to_html(stack_frequency_df, style=None, page_size=10)]),
+
+            # Pie Chart output
+            fig]
+
+
+
 
 
 @app.callback(Output('agg-exposures-tab-content', 'children'),

@@ -10,6 +10,9 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 import dash_table
 
+import plotly.express as px
+import plotly.graph_objs as go
+
 import base64
 import os
 import io
@@ -589,7 +592,7 @@ def parse_uploaded_data(contents, filename, date):
     return(df)   
 
 # This takes in a file upload from the UI and returns an HTML table (of sorts..) of the data
-def convert_df_to_html(df, style='team_colors'):
+def convert_df_to_html(df, style='team_colors', page_size=250):
 
     #df = pd.read_json(json_serialized_df)
 
@@ -603,6 +606,7 @@ def convert_df_to_html(df, style='team_colors'):
                 columns=[{'name': i, 'id': i} for i in df.columns],
                 sort_action="native",
                 filter_action='native',
+                page_size=page_size,
                 style_data_conditional = (
                     get_team_colors()
                 )
@@ -610,7 +614,23 @@ def convert_df_to_html(df, style='team_colors'):
 
             html.Hr(),  # horizontal line
         ])       
-         
+    
+    # Option for no formatting 
+    elif style == None:
+        return html.Div([
+
+            dash_table.DataTable(
+                data=df.to_dict('records'),
+                columns=[{'name': i, 'id': i} for i in df.columns],
+                sort_action="native",
+                filter_action='native',
+                page_size=page_size
+            ),
+
+            html.Hr(),  # horizontal line
+        ]) 
+
+
     else:
         # Conditional Formatting for players exposures
         (styles, legend) = discrete_background_color_bins(df)
@@ -622,7 +642,8 @@ def convert_df_to_html(df, style='team_colors'):
                 columns=[{'name': i, 'id': i} for i in df.columns],
                 sort_action="native",
                 filter_action='native',
-                style_data_conditional=styles
+                style_data_conditional=styles,
+                page_size=page_size
             ),
 
             html.Hr(),  # horizontal line
