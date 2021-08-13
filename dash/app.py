@@ -64,8 +64,8 @@ app.layout = html.Div([
             dcc.Tabs(id='tabs-example', value='summary-tab', children=[
                 dcc.Tab(label='Contest Summary', value='summary-tab', children=[
                                                                                 html.Div([
-                                                                                    html.Div(id='summary-tab-content'),
-                                                                                    dcc.Graph(id='stacks-pie-chart')
+                                                                                    html.Div(id='summary-tab-content', style={'display': 'inline-block'}),
+                                                                                    dcc.Graph(id='stacks-pie-chart', style={'display': 'inline-block'})
                                                                                     ])
                                                                                 ]),
 
