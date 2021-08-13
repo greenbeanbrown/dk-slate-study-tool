@@ -35,6 +35,7 @@ def prep_raw_nfl_contest_data(raw_dk_contest_data, sport):
     points_ownership_df = create_points_own_df(raw_dk_contest_data)
 
     # Now, create the ownership exposures
+    # FLAG - this is unnecessary after separating the functions into different files by sport
     if sport == 'MLB':
         exposures_df = cleanup_mlb_lineup_data(raw_dk_contest_data)
     elif sport == 'MMA':
@@ -45,17 +46,16 @@ def prep_raw_nfl_contest_data(raw_dk_contest_data, sport):
         raise ValueError('incorrect sport type entered as input')
 
     # Merge player team and position data for reference (should always be in same dir)
-    #player_team_pos_df = pd.read_csv('C:/Users/Sean/Documents/python/dk_slate_study_tool/data/mlb_players_pos_teams_data.csv') 
-    #player_team_pos_df = pd.read_csv('assets/mlb_players_pos_teams_data.csv') 
+    player_team_pos_df = pd.read_csv('assets/nfl_players_pos_teams_data.csv') 
 
     # Fuzzy match the player names to the lookup df with every player
-    #player_team_pos_df['player'] = [match_name(player_name, points_ownership_df['player'])[0] for player_name in player_team_pos_df['Player']]
-    #player_team_pos_df = handle_outlier_names(player_team_pos_df)
-    #player_team_pos_df.drop('Player', axis=1, inplace=True)
+    player_team_pos_df['player'] = [match_name(player_name, points_ownership_df['player'])[0] for player_name in player_team_pos_df['Player']]
+    player_team_pos_df = handle_outlier_names(player_team_pos_df)
+    player_team_pos_df.drop('Player', axis=1, inplace=True)
 
-    #points_ownership_df = pd.merge(points_ownership_df, player_team_pos_df, how='left', on='player')
+    points_ownership_df = pd.merge(points_ownership_df, player_team_pos_df, how='left', on='player')
     # Add file paths to team logos for use in dash app
-    #points_ownership_df = merge_team_logos(points_ownership_df)
+    points_ownership_df = merge_team_logos(points_ownership_df)
 
     # Return a list of dataframes, use index to get them [0,1]
     list_of_clean_dfs = [points_ownership_df, exposures_df]
@@ -77,11 +77,9 @@ def cleanup_nfl_lineup_data(raw_lineup_data):
     clean_lineup_data['EntryName'] = clean_lineup_data['EntryName'].apply(lambda row: clean_entry_name(row))
 
     # Replace all position substrings with ##, which we can use to split the lineups easily with - then we will add the positions back after
-    #list_of_all_lineups = [lineup.replace('P ', '#').replace('C ', '#').replace('1B ','#').replace('2B','#').replace('3B','#').replace('SS', '#').replace('OF','#') for lineup in clean_lineup_data.Lineup]
     list_of_all_lineups = [lineup.replace('QB ', '#').replace('RB ', '#').replace('FLEX ','#').replace('WR ','#').replace('TE ','#').replace('DST ', '#') for lineup in clean_lineup_data.Lineup]
 
     # Split up all the Fighter names and get rid of extra space - this is MUCH better than the original idea
-    #list_of_all_lineups = [[player_name.strip() for player_name in lineup[1:].split('#')] for lineup in raw_lineup_data.Lineup]
     list_of_all_lineups = [[player_name.strip() for player_name in lineup[1:].split('#')] for lineup in list_of_all_lineups]
 
     # Assign all of the list values to the df
@@ -111,11 +109,16 @@ def parse_nfl_stat_data(url):
     driver = webdriver.Firefox()   # Establish the driver, we are using FireFox in this case
     driver.get(url) 
 
-    # Find the ALL button, to show all results 
-    page_buttons = driver.find_elements_by_class_name("page")
-    all_button = page_buttons[len(page_buttons)-1]
-    # Click the button
-    driver.execute_script("arguments[0].click();", all_button)
+    try:
+        # Find the ALL button, to show all results 
+        page_buttons = driver.find_elements_by_class_name("page")
+    
+        all_button = page_buttons[len(page_buttons)-1]
+        # Click the button
+        driver.execute_script("arguments[0].click();", all_button)
+    except:
+        pass
+    
     # Find the table we want
     table = driver.find_element_by_id('game-stats-table') 
     # Get the stats table
@@ -169,9 +172,7 @@ def convert_nfl_df_to_html(df, style='team_colors', page_size=250):
                 sort_action="native",
                 filter_action='native',
                 page_size=page_size,
-                style_data_conditional = (
-                    get_team_colors()
-                )
+                #style_data_conditional = (get_team_colors())
             ),
 
             html.Hr(),  # horizontal line
@@ -212,8 +213,7 @@ def convert_nfl_df_to_html(df, style='team_colors', page_size=250):
         ])               
 
 # Used by the Individual Lineup Analyzer to filter the data by user
-#def parse_nfl_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_name):
-def parse_nfl_lineup(lineups_df, points_ownership_df, entry_name):
+def parse_nfl_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_name):
     
     # Get the lineup for that exact entry_name
     entry_lineup = lineups_df[lineups_df['raw_entry_name'] == entry_name]
@@ -233,18 +233,18 @@ def parse_nfl_lineup(lineups_df, points_ownership_df, entry_name):
 
     # Fuzzy match the player names to the lookup df with every player
     # Get the name matches - this is a dict with key being position and value being the player
-    #name_matches = {index:[match_name(value, player_team_pos_df['Player'])[0]] for index, value in zip(entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].index, entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0])}
+    name_matches = {index:[match_name(value, player_team_pos_df['Player'])[0]] for index, value in zip(entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].index, entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0])}
     # Create a dataframe of the matches from the dictionary
-    #matches_df = pd.DataFrame.from_dict(name_matches).transpose()
-    #matches_df.columns = ['player_match']
-    #matches_df['position'] = matches_df.index
+    matches_df = pd.DataFrame.from_dict(name_matches).transpose()
+    matches_df.columns = ['player_match']
+    matches_df['position'] = matches_df.index
 
     # Merge the team data
-    #merged_matches_df = pd.merge(matches_df, player_team_pos_df[['Player','Team']], how='left', left_on='player_match', right_on='Player')
-    #merged_matches_df = merged_matches_df[['player_match', 'position','Team']]
+    merged_matches_df = pd.merge(matches_df, player_team_pos_df[['Player','Team']], how='left', left_on='player_match', right_on='Player')
+    merged_matches_df = merged_matches_df[['player_match', 'position','Team']]
 
     # Then merge to the entry_lineup
-    #entry_lineup = pd.merge(entry_lineup, merged_matches_df, left_index=True, right_index=False, right_on='position', how='left')
+    entry_lineup = pd.merge(entry_lineup, merged_matches_df, left_index=True, right_index=False, right_on='position', how='left')
 
     # Merge entry_lineup with points_ownership and get the points, ownership
     entry_lineup = pd.merge(entry_lineup, points_ownership_df[['player','ownership','points']], how='left', left_on='Data', right_on='player')
@@ -258,19 +258,23 @@ def parse_nfl_lineup(lineups_df, points_ownership_df, entry_name):
 # This is used by the individual lineup analyzer tab to add the stack info at the bottom section of the page
 # The expectation is that the input for this function is the output from parse_mlb_lineup()
 def calculate_nfl_stacks(entry_lineup_df):
+    
+    working_df = entry_lineup_df
 
     # Trim the dataframe down to avoid pitchers in the count
-    #working_df = entry_lineup_df[~entry_lineup_df['Lineup Info'].isin(['P1','P2'])]
-    #working_df.rename(columns={'nickname':'Team'}, inplace=True)
+    working_df.rename(columns={'nickname':'Team'}, inplace=True)
 
-    working_df = merge_team_logos(working_df)
+    #working_df = merge_team_logos(working_df)
     working_df['Count'] = working_df.groupby('Team')['Team'].transform('count')
 
+    import ipdb; ipdb.set_trace()
+    
     # Add the EntryId as a column for merging in later use - this is the first field of the Data column
     # This is hardcoded for now basically because it's a strange shaped dataframe at this point in time
     working_df['EntryId'] = working_df.loc[0, 'Data']
     # Filter down columns
-    working_df = working_df[['EntryId','logo_path','Team','Count']].dropna()
+    #working_df = working_df[['EntryId','logo_path','Team','Count']].dropna()
+    working_df = working_df[['EntryId','Team','Count']].dropna()
 
     working_df = working_df.drop_duplicates().sort_values('Count', ascending=False)
 
@@ -280,7 +284,8 @@ def calculate_nfl_stacks(entry_lineup_df):
     
     
 # This function takes in a triple that contains the stack info and styles it into HTML for the app.layout()
-def convert_mlb_stacks_to_html(app, stacks_df):
+# FLAG - need to update this
+def convert_nfl_stacks_to_html(app, stacks_df):
 
     # This function parses each team's stack info into an html, this will be applied to each element of the input
     def create_stack_html_row(stack_row):
@@ -316,10 +321,10 @@ def convert_mlb_stacks_to_html(app, stacks_df):
 
 
 # This is used by the Stacks Calculator to convert raw lineup data into a digestable table of aggregate MLB stacks
-def summarize_mlb_lineup_stacks(raw_dk_contest_data, points_ownership_df, player_team_pos_df, *args):
+def summarize_nfl_lineup_stacks(raw_dk_contest_data, points_ownership_df, player_team_pos_df, *args):
     
     # Cleanup mlb lineup data
-    lineups_df = cleanup_mlb_lineup_data(raw_dk_contest_data)
+    lineups_df = cleanup_nfl_lineup_data(raw_dk_contest_data)
 
     # If there is no optional user parameter passed, then don't filter the dataframe
     if len(list(*args)) == 0:
@@ -329,16 +334,16 @@ def summarize_mlb_lineup_stacks(raw_dk_contest_data, points_ownership_df, player
         lineups_df = lineups_df[lineups_df['EntryName'].isin(list(*args))]
 
     # Parse mlb lineup
-    list_of_all_lineup_dfs = [parse_mlb_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_name) for entry_name in lineups_df.raw_entry_name]
+    list_of_all_lineup_dfs = [parse_nfl_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_name) for entry_name in lineups_df.raw_entry_name]
     
     # Calculate stacks
-    list_of_all_lineup_stacks = [calculate_mlb_stacks(lineup_df) for lineup_df in list_of_all_lineup_dfs]
+    list_of_all_lineup_stacks = [calculate_nfl_stacks(lineup_df) for lineup_df in list_of_all_lineup_dfs]
     
-    def convert_stack_to_string(mlb_stacks_df):
-        return(str('-'.join(str(int(x)) for x in mlb_stacks_df['Count'])))
+    def convert_stack_to_string(nfl_stacks_df):
+        return(str('-'.join(str(int(x)) for x in nfl_stacks_df['Count'])))
     
-    def convert_teams_to_string(mlb_stacks_df):
-        return(str('-'.join(str(x) for x in mlb_stacks_df['Team'])))
+    def convert_teams_to_string(nfl_stacks_df):
+        return(str('-'.join(str(x) for x in nfl_stacks_df['Team'])))
     
     # This function adds trailing zeros to relevant series of data related to stacks, due to blank entries
     # Main purpose of this is to allow for a clean dataframe to be constructed
@@ -353,8 +358,8 @@ def summarize_mlb_lineup_stacks(raw_dk_contest_data, points_ownership_df, player
         return(new_data_list)
     
     # Convert the stack count to a single string, delimited by dashes
-    stack_strings = [convert_stack_to_string(mlb_stack_df) for mlb_stack_df in list_of_all_lineup_stacks]
-    team_strings = [convert_teams_to_string(mlb_stack_df) for mlb_stack_df in list_of_all_lineup_stacks]
+    stack_strings = [convert_stack_to_string(nfl_stack_df) for nfl_stack_df in list_of_all_lineup_stacks]
+    team_strings = [convert_teams_to_string(nfl_stack_df) for nfl_stack_df in list_of_all_lineup_stacks]
 
     #    # Return a dataframe with all this stuff for output
     #    agg_stacks_df = pd.DataFrame({'DK User':raw_dk_contest_data['EntryName'], 
@@ -368,8 +373,8 @@ def summarize_mlb_lineup_stacks(raw_dk_contest_data, points_ownership_df, player
     # Return a dataframe with all this stuff for output
     agg_stacks_df = pd.DataFrame({'DK User':lineups_df['EntryName'], 
                                   'Points':lineups_df['Points'], 
-                                  'P1':lineups_df['P1'], 
-                                  'P2':lineups_df['P2'],
+                                  #'P1':lineups_df['P1'], 
+                                  #'P2':lineups_df['P2'],
                                   'Teams Stacked':team_strings, 
                                   'Stack Type':stack_strings})    
 
