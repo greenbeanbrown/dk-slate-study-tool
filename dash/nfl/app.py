@@ -13,6 +13,7 @@ from dash.exceptions import PreventUpdate
 
 import dash_table
 
+import time
 
 import dash_bootstrap_components as dbc
 
@@ -200,15 +201,23 @@ def contest_summary_content(tab, data):
         points_ownership_df = create_points_own_df(df)
 
         # Goal of this is to show descriptive summary info of the contest, a "snapshot" if you will
-
+        start = time.time()
         # First thing to present is the distribution of stack-types present in the contest (e.g. How many 5-2-1 stacks were there? 5-3? so on..)
         df = summarize_nfl_lineup_stacks(df, points_ownership_df, PLAYER_TEAM_POS_DF)
+        end = time.time()
+        print('Summarize NFL Lineup Stacks time: ', end - start)
+
+
         # Get the frequency count of each stack type
         stack_frequency_df = pd.DataFrame({'Stack Type': df['Stack Type'].value_counts().index,
                                            'Count': df['Stack Type'].value_counts()})
 
+
+        start = time.time()
         # Second thing to do is plot this as a pie chart 
         fig = px.pie(stack_frequency_df, values='Count', names='Stack Type', title='Stack Frequencies')
+        end = time.time()
+        print('Pie Plot Creation time: ', end - start)
 
         # Third thing to do is present the distribution of team stacks
         

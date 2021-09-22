@@ -25,6 +25,7 @@ import sys
 #sys.path.insert(0, '../../functions/')
 from functions import *
 
+
 def prep_raw_nfl_contest_data(raw_dk_contest_data, sport):
 
     # Take in 1 raw dataframe as an input
@@ -77,10 +78,11 @@ def cleanup_nfl_lineup_data(raw_lineup_data):
     clean_lineup_data['EntryName'] = clean_lineup_data['EntryName'].apply(lambda row: clean_entry_name(row))
 
     # Replace all position substrings with ##, which we can use to split the lineups easily with - then we will add the positions back after
-    list_of_all_lineups = [lineup.replace('QB ', '#').replace('RB ', '#').replace('FLEX ','#').replace('WR ','#').replace('TE ','#').replace('DST ', '#') for lineup in clean_lineup_data.Lineup]
+    list_of_all_lineups = [lineup.replace('QB ', '#').replace('RB ', '#').replace('FLEX ','#').replace('WR ','#').replace('TE ','#').replace('DST ', '#').replace('CPT ', '#') for lineup in clean_lineup_data.Lineup]
 
     # Split up all the Fighter names and get rid of extra space - this is MUCH better than the original idea
     list_of_all_lineups = [[player_name.strip() for player_name in lineup[1:].split('#')] for lineup in list_of_all_lineups]
+
 
     # Assign all of the list values to the df
     clean_lineup_data['1'] = [lineup[0] for lineup in list_of_all_lineups]
@@ -89,9 +91,9 @@ def cleanup_nfl_lineup_data(raw_lineup_data):
     clean_lineup_data['4'] = [lineup[3] for lineup in list_of_all_lineups]
     clean_lineup_data['5'] = [lineup[4] for lineup in list_of_all_lineups]
     clean_lineup_data['6'] = [lineup[5] for lineup in list_of_all_lineups]
-    clean_lineup_data['7'] = [lineup[6] for lineup in list_of_all_lineups]
-    clean_lineup_data['8'] = [lineup[7] for lineup in list_of_all_lineups]
-    clean_lineup_data['9'] = [lineup[8] for lineup in list_of_all_lineups]
+    #clean_lineup_data['7'] = [lineup[6] for lineup in list_of_all_lineups]
+    #clean_lineup_data['8'] = [lineup[7] for lineup in list_of_all_lineups]
+    #clean_lineup_data['9'] = [lineup[8] for lineup in list_of_all_lineups]
     #clean_lineup_data['10'] = [lineup[9] for lineup in list_of_all_lineups]
 
     # Drop that dirty Lineup column now that its unnecessary
@@ -223,7 +225,8 @@ def parse_nfl_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_
     entry_lineup['Lineup Name'] = entry_lineup['raw_entry_name']
     
     # Final columns and order
-    output_cols = ['EntryId','Rank', 'Points', 'Lineup Name', '1','2','3','4','5','6','7','8','9']
+    #output_cols = ['EntryId','Rank', 'Points', 'Lineup Name', '1','2','3','4','5','6','7','8','9']
+    output_cols = ['EntryId','Rank', 'Points', 'Lineup Name', '1','2','3','4','5','6']
     non_player_cols = ['EntryId','Rank','Points','Lineup Name']
     entry_lineup = entry_lineup[output_cols]
 
@@ -233,6 +236,7 @@ def parse_nfl_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_
 
     # Fuzzy match the player names to the lookup df with every player
     # Get the name matches - this is a dict with key being position and value being the player
+
     name_matches = {index:[match_name(value, player_team_pos_df['Player'])[0]] for index, value in zip(entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].index, entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0])}
     # Create a dataframe of the matches from the dictionary
     matches_df = pd.DataFrame.from_dict(name_matches).transpose()
@@ -267,8 +271,6 @@ def calculate_nfl_stacks(entry_lineup_df):
     #working_df = merge_team_logos(working_df)
     working_df['Count'] = working_df.groupby('Team')['Team'].transform('count')
 
-    import ipdb; ipdb.set_trace()
-    
     # Add the EntryId as a column for merging in later use - this is the first field of the Data column
     # This is hardcoded for now basically because it's a strange shaped dataframe at this point in time
     working_df['EntryId'] = working_df.loc[0, 'Data']
@@ -324,7 +326,10 @@ def convert_nfl_stacks_to_html(app, stacks_df):
 def summarize_nfl_lineup_stacks(raw_dk_contest_data, points_ownership_df, player_team_pos_df, *args):
     
     # Cleanup mlb lineup data
+    start = time.time()
     lineups_df = cleanup_nfl_lineup_data(raw_dk_contest_data)
+    end = time.time()
+    print('Cleanup NFL Lineup Task time: ', end - start)
 
     # If there is no optional user parameter passed, then don't filter the dataframe
     if len(list(*args)) == 0:
@@ -333,12 +338,19 @@ def summarize_nfl_lineup_stacks(raw_dk_contest_data, points_ownership_df, player
     else:
         lineups_df = lineups_df[lineups_df['EntryName'].isin(list(*args))]
 
+    start = time.time()
     # Parse mlb lineup
     list_of_all_lineup_dfs = [parse_nfl_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_name) for entry_name in lineups_df.raw_entry_name]
-    
+    end = time.time()
+    print('Parse NFL Lineups time: ', end - start)
+
+    start = time.time()
     # Calculate stacks
     list_of_all_lineup_stacks = [calculate_nfl_stacks(lineup_df) for lineup_df in list_of_all_lineup_dfs]
+    end = time.time()
+    print('Create Lineup Stacks time: ', end - start)
     
+
     def convert_stack_to_string(nfl_stacks_df):
         return(str('-'.join(str(int(x)) for x in nfl_stacks_df['Count'])))
     
@@ -357,9 +369,12 @@ def summarize_nfl_lineup_stacks(raw_dk_contest_data, points_ownership_df, player
         new_data_list = np.concatenate([data_list, np.zeros(num_zeros_to_add)])
         return(new_data_list)
     
+    start = time.time()
     # Convert the stack count to a single string, delimited by dashes
     stack_strings = [convert_stack_to_string(nfl_stack_df) for nfl_stack_df in list_of_all_lineup_stacks]
     team_strings = [convert_teams_to_string(nfl_stack_df) for nfl_stack_df in list_of_all_lineup_stacks]
+    end = time.time()
+    print('Convert Stacks to Strings time: ', end - start)
 
     #    # Return a dataframe with all this stuff for output
     #    agg_stacks_df = pd.DataFrame({'DK User':raw_dk_contest_data['EntryName'], 
@@ -381,3 +396,17 @@ def summarize_nfl_lineup_stacks(raw_dk_contest_data, points_ownership_df, player
     
 
     return(agg_stacks_df)    
+
+
+def calc_duplicates(raw_dk_contest_data):
+    """Takes in current runner-on-base situation, runs, outs, and batting outcome to return end state info
+
+    Args:
+        start_state (str): current runner-on-base state, e.g. 'AAA' = bases empty, 'A1A' = runner on 2nd only
+        batting_outcome (str): monte carlo output of batting situation
+        runs (int): number to track runs scored in current innings
+        outs (int): number to track outs in current inning 
+    Return:
+        
+    """    
+    
