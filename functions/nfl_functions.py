@@ -236,16 +236,34 @@ def parse_nfl_lineup(lineups_df, points_ownership_df, player_team_pos_df, entry_
 
     # Fuzzy match the player names to the lookup df with every player
     # Get the name matches - this is a dict with key being position and value being the player
+    
 
-    name_matches = {index:[match_name(value, player_team_pos_df['Player'])[0]] for index, value in zip(entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].index, entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0])}
+    # Create a column for the dk_name to avoid having to fuzzy match on a lineup-by-lineup basis
+    #player_team_pos_df['dk_name'] = [match_name(player_team_pos_df_name, 
+
+    #start = time.time()
+    #name_matches = {index:[match_name(value, player_team_pos_df['Player'])[0]] for index, value in zip(entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].index, entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0])}
+    #end = time.time()
+    #print('Dict matching time: ', end - start)
+
+    #start = time.time()
+    name_matches = [match_name(value, player_team_pos_df['Player'])[0] for value in entry_lineup[np.logical_not(entry_lineup.index.isin(non_player_cols))].iloc[:,0]]
+    #end = time.time()
+    #print('List matching time: ', end - start)
+
+
     # Create a dataframe of the matches from the dictionary
-    matches_df = pd.DataFrame.from_dict(name_matches).transpose()
+    #matches_df = pd.DataFrame.from_dict(name_matches).transpose()
+    matches_df = pd.DataFrame(name_matches)
     matches_df.columns = ['player_match']
     matches_df['position'] = matches_df.index
 
+    import ipdb; ipdb.set_trace()
+
+
     # Merge the team data
     merged_matches_df = pd.merge(matches_df, player_team_pos_df[['Player','Team']], how='left', left_on='player_match', right_on='Player')
-    merged_matches_df = merged_matches_df[['player_match', 'position','Team']]
+    merged_matches_df = merged_matches_df[['player_match','position','Team']]
 
     # Then merge to the entry_lineup
     entry_lineup = pd.merge(entry_lineup, merged_matches_df, left_index=True, right_index=False, right_on='position', how='left')
